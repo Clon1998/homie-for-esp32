@@ -1,0 +1,27 @@
+{
+    "name": "Homie-for-ESP32",
+    "keywords": "Homie, MQTT, ESP32",
+    "description": "Libary implementing Homie 3.0.1 for the ESP32 utilizing the ESP32 tasks",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/Clon1998/homie-for-esp32.git"
+    },
+    "authors":
+    [
+      {
+        "name": "Patrick Schmidt",
+        "email": "patrick.schmidt.25@stud.tu-darmstadt.de",
+        "maintainer": true
+      }
+    ],
+    "dependencies": [
+        {
+          "name": "AsyncMqttClient",
+          "version": "^0.8.2"
+        }
+    ],
+    "version": "0.9.0",
+    "frameworks": "arduino",
+    "platforms": "espressif32"
+}
