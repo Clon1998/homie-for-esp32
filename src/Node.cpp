@@ -70,7 +70,7 @@ void Node::init()
         return;
     }
 
-    ESP_LOGV(TAG, "Init for node %s (%s) with base topic: '%s'", _name, _id, _topic);
+    ESP_LOGV(TAG, "Init for node %s (%s)", _name, _id);
 
     for (auto const &prop : _properties)
     {
