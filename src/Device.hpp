@@ -11,26 +11,28 @@
 #include <Stats.hpp>
 
 #define HOMIE_VER "3.0.1"
-#define QUEUE_SIZE 50
+#ifndef HOMIE_INCOMING_MSG_QUEUE
+#define HOMIE_INCOMING_MSG_QUEUE 50
+#endif
 
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
 
 struct CmpStr
 {
-   bool operator()(char const *a, char const *b) const
-   {
-       ESP_LOGV(TAG, "Comparing: a:'%s' b:'%s' result: %d",a,b,strcmp(a, b));
-      return strcmp(a, b) < 0;
-   }
+    bool operator()(char const *a, char const *b) const
+    {
+        ESP_LOGV(TAG, "Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
+        return strcmp(a, b) < 0;
+    }
 };
-
 
 struct PublishQueueElement
 {
-    const char* topic;
-    const char* payload;
+    const char *topic;
+    const char *payload;
 
-    ~PublishQueueElement() {
+    ~PublishQueueElement()
+    {
         ESP_LOGV(TAG, "Destructor of PupQueElm");
         delete[] topic;
         delete[] payload;
@@ -48,30 +50,30 @@ private:
     HomieDeviceState _state = DSTATE_LOST;
     std::vector<Node *> _nodes;
     std::vector<Stats *> _stats;
-    
+
     AsyncMqttClient *_client;
     IPAddress _ip;
 
-    const char* _topic;
-    const char* _lwTopic;
-    const char* _homieVersion = HOMIE_VER;
-    const char* _id;
-    const char* _name;
-    const char* _mac;
-    const char* _extensions;
+    const char *_topic;
+    const char *_lwTopic;
+    const char *_homieVersion = HOMIE_VER;
+    const char *_id;
+    const char *_name;
+    const char *_mac;
+    const char *_extensions;
 
     bool _setupDone = false;
     bool _defaultsPublished = false;
     int _statsInterval = 60;
 
-    char* _workingBuffer;
+    char *_workingBuffer;
     unsigned long _connectionTimeStamp;
 
-    std::map<const char*, Property *, CmpStr> _topicCallbacks;
+    std::map<const char *, Property *, CmpStr> _topicCallbacks;
     std::vector<OnDeviceStateChangedCallback> _onDeviceStateChangedCallbacks;
 
     QueueHandle_t _newMqttMessageQueue;
-    
+
     TaskHandle_t _taskStatsHandling;
     TaskHandle_t _taskNewMqttMessages;
 
@@ -96,7 +98,7 @@ private:
     void onWiFiEventCallback(WiFiEvent_t event);
 
 public:
-    Device(AsyncMqttClient *client, const char* id, uint8_t buffSize = 128);
+    Device(AsyncMqttClient *client, const char *id, uint8_t buffSize = 128);
 
     ~Device() {}
     /**
@@ -164,7 +166,7 @@ public:
      * @param d * the extension String.
      * @return char* 
      */
-    char* prefixedTopic(char* buff, const char* d);
+    char *prefixedTopic(char *buff, const char *d);
 
     /**
      * @brief Get the State object
@@ -203,7 +205,7 @@ public:
      * 
      * @return const char* 
      */
-    const char* getTopic()
+    const char *getTopic()
     {
         return this->_topic;
     }
@@ -213,7 +215,7 @@ public:
      * 
      * @return char* 
      */
-    char* getWorkingBuffer()
+    char *getWorkingBuffer()
     {
         return this->_workingBuffer;
     }
@@ -234,10 +236,10 @@ public:
      * @return true if setup is done
      * @return false if setup isnt done
      */
-   bool isSetupDone()
-   {
-       return this->_setupDone;
-   }
+    bool isSetupDone()
+    {
+        return this->_setupDone;
+    }
 
     /**
      * @brief are the defaults Published
@@ -245,8 +247,28 @@ public:
      * @return true if the defaults are published
      * @return false if the defaults are not published
      */
-   bool areDefaultsPublished()
-   {
-       return this->_defaultsPublished;
-   }
+    bool areDefaultsPublished()
+    {
+        return this->_defaultsPublished;
+    }
+
+    /**
+     * @brief Set the Stats Interval
+     * 
+     * @param interval 
+     */
+    void setStatsInterval(int interval)
+    {
+        this->_statsInterval = interval;
+    }
+
+    /**
+     * @brief Get the Stats Interval
+     * 
+     * @return int 
+     */
+    int getStatsInterval()
+    {
+        return this->_statsInterval;
+    }
 };

@@ -53,7 +53,7 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
 
     _workingBuffer = new char[buffSize];
 
-    _newMqttMessageQueue = xQueueCreate(QUEUE_SIZE, sizeof(PublishQueueElement *));
+    _newMqttMessageQueue = xQueueCreate(HOMIE_INCOMING_MSG_QUEUE, sizeof(PublishQueueElement *));
 
     TimerArguments *args = new TimerArguments();
     args->device = this;
