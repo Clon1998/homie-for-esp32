@@ -93,6 +93,7 @@ Property::Property(Node *src, AsyncMqttClient *client, const char *id, const cha
     }
 
     _value = new char[_valueSize];
+    _value[0] = 0;
 }
 
 char *Property::prefixedPropertyTopic(char *buff, const char *d)
@@ -154,22 +155,20 @@ void Property::init()
         return;
     }
     ESP_LOGV(TAG, "Init for property %s (%s) with base topic: '%s'", _name, _id, _topic);
+    
+    if (_retained)
+        _client->subscribe(_topic, 1);
 
     if (_settable)
     {
         _parent->getParent()->registerSettableProperty(this);
-        _client->subscribe(_topic, 1);
         _client->subscribe(prefixedPropertyTopic(_parent->getParent()->getWorkingBuffer(), "/set"), 1);
-    }
-    else
-    {
-        setValue(_value);
     }
 }
 
 void Property::setValue(const char *value, bool useSetTopic)
 {
-    if (!value)
+    if (!value || strlen(value) == 0)
     {
         value = defaultForDataType(_dataType);
         ESP_LOGW(TAG, "Empty String for non String dataType using default value '%s'", this->_value);

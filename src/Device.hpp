@@ -21,7 +21,7 @@ struct CmpStr
 {
     bool operator()(char const *a, char const *b) const
     {
-        ESP_LOGV(TAG, "Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
+        //ESP_LOGV(TAG, "Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
         return strcmp(a, b) < 0;
     }
 };

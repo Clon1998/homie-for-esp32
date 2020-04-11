@@ -205,8 +205,11 @@ void Device::registerSettableProperty(Property *property)
 
     _topicCallbacks[property->getTopicSet()] = property;
     vTaskDelay(pdMS_TO_TICKS(20));
-    _topicCallbacks[property->getTopic()] = property;
-    vTaskDelay(pdMS_TO_TICKS(20));
+    
+    if (property->isRetained()) {
+        _topicCallbacks[property->getTopic()] = property;
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
 }
 //
 void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr, AsyncMqttClientMessageProperties properties,
@@ -300,13 +303,15 @@ void Device::handleRestoredValues()
         //Only delete the DATA channels from the subscription and topic callbacks, since we dont need them anymore!
         _topicCallbacks.erase(it->second->topic);
         _client->unsubscribe(it->second->topic);
-
-        p->setValue(elm->payload);
-
-        PropertySetCallback callback = p->getCallback();
-        if (callback != nullptr)
+        if (p->isRetained())
         {
-            callback(p);
+            p->setValue(elm->payload);
+
+            PropertySetCallback callback = p->getCallback();
+            if (callback != nullptr)
+            {
+                callback(p);
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(40));
 

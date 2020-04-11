@@ -59,11 +59,10 @@ public:
         return this->_id;
     }
 
-    //
-    //    HomieDataType getDataType()
-    //    {
-    //        return this->_dataType;
-    //    }
+    HomieDataType getDataType()
+    {
+        return this->_dataType;
+    }
 
     bool isSettable()
     {
@@ -74,11 +73,12 @@ public:
     {
         this->_settable = settable;
     }
-    //
-    //    bool getRetained()
-    //    {
-    //        return this->_retained;
-    //    }
+
+    bool isRetained()
+    {
+        return this->_retained;
+    }
+
     void setRetained(bool retained)
     {
         this->_retained = retained;
