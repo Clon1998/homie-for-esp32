@@ -23,7 +23,7 @@ char *Node::prefixedNodeTopic(char *buff, const char *d)
     strcat(buff, "/");
     strcat(buff, d);
 
-    ESP_LOGV(TAG, "Prefixed Topic Node: %s", buff);
+    //ESP_LOGV(TAG, "Prefixed Topic Node: %s", buff);
     return buff;
 }
 

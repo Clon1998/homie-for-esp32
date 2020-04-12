@@ -167,7 +167,7 @@ char *Device::prefixedTopic(char *buff, const char *d)
 {
     strcpy(buff, _topic);
     strcat(buff, d);
-    ESP_LOGV(TAG, "Prefixed Topic Device: %s", buff);
+    // ESP_LOGV(TAG, "Prefixed Topic Device: %s", buff);
     return buff;
 }
 

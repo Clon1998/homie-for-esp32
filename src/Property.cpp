@@ -101,7 +101,7 @@ char *Property::prefixedPropertyTopic(char *buff, const char *d)
     strcpy(buff, _topic);
     strcat(buff, d);
 
-    ESP_LOGV(TAG, "Prefixed Topic Property: %s", buff);
+    //ESP_LOGV(TAG, "Prefixed Topic Property: %s", buff);
     return buff;
 }
 
@@ -227,6 +227,8 @@ void Property::setValue(const char *value, bool useSetTopic)
     strcpy(_value, value);
 
     ESP_LOGV(TAG, "Property %s(%s) topic->'%s' payload->'%s:::%p' bufferValue->'%s:::%p' ", _name, _id, _topic, value, &value, _value, &_value);
+    if (!_retained)
+        return;
     if (useSetTopic)
     {
         _client->publish(prefixedPropertyTopic(_parent->getParent()->getWorkingBuffer(), "/set"), 1, true, _value);

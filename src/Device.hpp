@@ -33,7 +33,7 @@ struct PublishQueueElement
 
     ~PublishQueueElement()
     {
-        ESP_LOGV(TAG, "Destructor of PupQueElm");
+        // ESP_LOGV(TAG, "Destructor of PupQueElm");
         delete[] topic;
         delete[] payload;
     }
