@@ -30,7 +30,8 @@ struct PublishQueueElement
 {
     const char *topic;
     const char *payload;
-
+    AsyncMqttClientMessageProperties mqttProps;
+    
     ~PublishQueueElement()
     {
         // ESP_LOGV(TAG, "Destructor of PupQueElm");

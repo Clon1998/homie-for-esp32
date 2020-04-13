@@ -254,5 +254,8 @@ bool Property::getValueAsBool()
 
 void Property::setDefaultValue(const char *value)
 {
-    strcpy(_value, value);
+    if (_retained)
+        strcpy(_value, value);
+    else
+        log_e(" A non retained Property should never have a default value!");
 }

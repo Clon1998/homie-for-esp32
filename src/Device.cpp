@@ -233,8 +233,9 @@ void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr,
     PublishQueueElement *tmp = new PublishQueueElement;
     tmp->topic = topic;
     tmp->payload = payload;
+    tmp->mqttProps = properties;
 
-    ESP_LOGV(TAG, "New Message on topic: '%s' with payload: '%s' len %d total %d lenin %d lenout %d", topic, payload, len, total, strlen(payloadCharPtr), strlen(payload));
+    ESP_LOGV(TAG, "New Message on topic: '%s' with payload: '%s' len %d total %d lenin %d lenout %d retain %d", topic, payload, len, total, strlen(payloadCharPtr), strlen(payload), properties.retain);
     xQueueSendToBack(_newMqttMessageQueue, &tmp, 20 / portTICK_PERIOD_MS);
 }
 
@@ -255,11 +256,13 @@ void Device::handleRestoredValues()
         if (it != _topicCallbacks.end())
         {
             Property *p = it->second;
-            if (p == nullptr)
+            // If Property is not retained we should not check for some retained/default values
+            if (p == nullptr || !p->isRetained())
             {
                 delete elm;
                 continue;
             }
+
 
             if (strcmp(elm->topic + (strlen(elm->topic) - 4), "/set") != 0)
             {
@@ -269,7 +272,12 @@ void Device::handleRestoredValues()
             else
             {
                 //Comes from SET Channel
-                commandValues[p] = elm;
+                if (elm->mqttProps.retain) {
+                    // Message was retained, ignoring all retained msgs in SET CHANNEL! As per Homie Spec!
+                    delete elm;
+                } else {
+                    commandValues[p] = elm;
+                }
             }
         }
     }
