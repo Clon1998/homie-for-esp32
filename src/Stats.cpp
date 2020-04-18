@@ -2,7 +2,6 @@
 #include <Node.hpp>
 #include <Device.hpp>
 
-static const char *TAG = "Homie-Stats";
 
 Stats::Stats(Device *src, AsyncMqttClient *client, const char *statName) : _parent(src),
                                                                            _name(statName),
@@ -23,6 +22,6 @@ Stats::Stats(Device *src, AsyncMqttClient *client, const char *statName) : _pare
 void Stats::publish()
 {
     _func(this);
-    ESP_LOGV(TAG, "Stats %s topic: %s value %s", _name, _topic, _value);
+    log_v("Stats %s topic: %s value %s", _name, _topic, _value);
     _client->publish(_topic, 1, true, _value);
 }

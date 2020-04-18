@@ -1,6 +1,5 @@
 #include <Node.hpp>
 #include <Device.hpp>
-static const char *TAG = "Homie-Node";
 
 Node::Node(Device *src, AsyncMqttClient *client) : _parent(src),
                                                    _name(nullptr),
@@ -23,7 +22,7 @@ char *Node::prefixedNodeTopic(char *buff, const char *d)
     strcat(buff, "/");
     strcat(buff, d);
 
-    //ESP_LOGV(TAG, "Prefixed Topic Node: %s", buff);
+    //log_v("Prefixed Topic Node: %s", buff);
     return buff;
 }
 
@@ -31,7 +30,7 @@ void Node::setup()
 {
     if (!_name || !_type || !_id)
     {
-        ESP_LOGE(TAG, "Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
+        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
         return;
     }
 
@@ -52,7 +51,7 @@ void Node::setup()
     if (_properties.size() > 0)
         propNames.remove(propNames.length() - 1);
 
-    ESP_LOGV(TAG, "PropNames: %s", propNames.c_str());
+    log_v("PropNames: %s", propNames.c_str());
 
     _client->publish(_parent->prefixedTopic(_parent->getWorkingBuffer(), prefixedNodeTopic(nodeTopic.get(), "$properties")), 1, true, propNames.c_str());
 
@@ -66,11 +65,11 @@ void Node::init()
 {
     if (!_name || !_type || !_id)
     {
-        ESP_LOGE(TAG, "Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
+        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
         return;
     }
 
-    ESP_LOGV(TAG, "Init for node %s (%s)", _name, _id);
+    log_v("Init for node %s (%s)", _name, _id);
 
     for (auto const &prop : _properties)
     {

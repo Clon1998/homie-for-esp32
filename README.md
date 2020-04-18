@@ -25,7 +25,7 @@ void brigthnessCallback(Property *property)
 {
     char *pEnd;
     double perc = std::strtod(property->getValue(), &pEnd);
-    //ESP_LOGI(TAG, "%s, %f", property->getValue(), perc);
+    //log_i("%s, %f", property->getValue(), perc);
     if (perc > 1)
     {
         perc = perc / 100;
@@ -35,7 +35,7 @@ void brigthnessCallback(Property *property)
 
 void getFreeHeap(Stats *stat)
 {
-    stat->setValue(String(ESP.getFreeHeap()).c_str());
+    stat->setValue(ESP.getFreeHeap());
 }
 
 

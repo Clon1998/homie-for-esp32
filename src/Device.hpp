@@ -21,7 +21,7 @@ struct CmpStr
 {
     bool operator()(char const *a, char const *b) const
     {
-        //ESP_LOGV(TAG, "Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
+        //log_v("Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
         return strcmp(a, b) < 0;
     }
 };
@@ -34,7 +34,7 @@ struct PublishQueueElement
     
     ~PublishQueueElement()
     {
-        // ESP_LOGV(TAG, "Destructor of PupQueElm");
+        // log_v("Destructor of PupQueElm");
         delete[] topic;
         delete[] payload;
     }

@@ -31,6 +31,15 @@ private:
 
     AsyncMqttClient *_client;
     char *prefixedPropertyTopic(char *buff, const char *d);
+    /**
+     * @brief checks if the value matches the format
+     * return true if the value is correct!
+     * Does not check for null/empty value!!!
+     * @param value 
+     * @return true value matches the Format
+     * @return false value does not match the Format
+     */
+    bool validateValue(const char *value);
 
 public:
     Property(Node *src, AsyncMqttClient *client, const char *id, const char *name, HomieDataType dataType);
@@ -129,10 +138,33 @@ public:
     {
         return this->_value;
     }
+    /**
+     * @brief Set the Value of the Property,
+     * if updateToMqtt is set to TRUE it will publish to the SET channel,
+     * the device will receive that MQTT publish and kicks off the callback.
+     * 
+     * @param value 
+     * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
+     */
+    void setValue(const char *value, bool updateToMqtt = false);
 
-    void setValue(const char *value, bool useSetTopic = false);
+    /**
+     * @brief Set the Value of the Property,
+     * if updateToMqtt is set to TRUE it will publish to the SET channel,
+     * the device will receive that MQTT publish and kicks off the callback.
+     * 
+     * @param value 
+     * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
+     */
+    void setValue(String value, bool updateToMqtt = false);
+
+    void setValue(int value, bool updateToMqtt = false);
+    
+    void setValue(bool value, bool updateToMqtt = false);
 
     void setDefaultValue(const char *value);
+
+    void setDefaultValue(String value);
 
     void setCallback(PropertySetCallback callback)
     {

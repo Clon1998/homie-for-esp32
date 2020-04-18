@@ -1,8 +1,6 @@
 #include <Device.hpp>
 #include <WiFi.h>
 
-static const char *TAG = "Homie-Device";
-
 const char *stateEnumToString(HomieDeviceState e)
 {
     switch (e)
@@ -42,7 +40,7 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
     strcat(topicLw, "$state");
     _lwTopic = topicLw;
 
-    ESP_LOGI(TAG, "Setting LW to: %s", _lwTopic);
+    log_i("Setting LW to: %s", _lwTopic);
     client->setWill(_lwTopic, 1, true, "lost");
 
     client->onConnect(bind(&Device::onMqttConnectCallback, this, std::placeholders::_1));
@@ -108,19 +106,19 @@ void Device::setup()
 {
     if (!_client->connected())
     {
-        ESP_LOGE(TAG, "Tryed to init device, but MQTT client isnt connected!");
+        log_e("Tryed to init device, but MQTT client isnt connected!");
         return;
     }
 
     if (!_name || !_id)
     {
         this->setState(DSTATE_ALERT);
-        ESP_LOGE(TAG, "The devices Name or ID is not set.");
+        log_e("The devices Name or ID is not set.");
         return;
     }
     //    "homie/" + id + "/"
 
-    ESP_LOGI(TAG, "Device-Setup Base-Topic '%s'", _topic);
+    log_i("Device-Setup Base-Topic '%s'", _topic);
     setState(DSTATE_INIT);
 
     _client->publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
@@ -167,7 +165,7 @@ char *Device::prefixedTopic(char *buff, const char *d)
 {
     strcpy(buff, _topic);
     strcat(buff, d);
-    // ESP_LOGV(TAG, "Prefixed Topic Device: %s", buff);
+    // log_v("Prefixed Topic Device: %s", buff);
     return buff;
 }
 
@@ -176,18 +174,18 @@ void Device::init()
 
     if (!_client->connected())
     {
-        ESP_LOGE(TAG, "Tryed to init device, but MQTT client isnt connected!");
+        log_e("Tryed to init device, but MQTT client isnt connected!");
         return;
     }
 
     if (!_name || !_id)
     {
         this->setState(DSTATE_ALERT);
-        ESP_LOGE(TAG, "The devices Name or ID is not set.");
+        log_e("The devices Name or ID is not set.");
         return;
     }
 
-    ESP_LOGV(TAG, "Device-Init Base-Topic '%s'", _topic);
+    log_v("Device-Init Base-Topic '%s'", _topic);
     _defaultsPublished = false;
     setState(DSTATE_INIT);
 
@@ -200,7 +198,7 @@ void Device::init()
 
 void Device::registerSettableProperty(Property *property)
 {
-    ESP_LOGV(TAG, "Added new callback to map for property %s (%s) with topic: '%s' and topicSet: '%s'",
+    log_v("Added new callback to map for property %s (%s) with topic: '%s' and topicSet: '%s'",
              property->getName(), property->getId(), property->getTopic(), property->getTopicSet());
 
     _topicCallbacks[property->getTopicSet()] = property;
@@ -220,7 +218,7 @@ void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr,
 
     if (index + len != total)
     {
-        ESP_LOGE(TAG, "Received a multipart message, not implemented yet!");
+        log_e("Received a multipart message, not implemented yet!");
     }
 
     char *payload = new char[len + 1];
@@ -235,7 +233,7 @@ void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr,
     tmp->payload = payload;
     tmp->mqttProps = properties;
 
-    ESP_LOGV(TAG, "New Message on topic: '%s' with payload: '%s' len %d total %d lenin %d lenout %d retain %d", topic, payload, len, total, strlen(payloadCharPtr), strlen(payload), properties.retain);
+    log_v("New Message on topic: '%s' with payload: '%s' len %d total %d lenin %d lenout %d retain %d", topic, payload, len, total, strlen(payloadCharPtr), strlen(payload), properties.retain);
     xQueueSendToBack(_newMqttMessageQueue, &tmp, 20 / portTICK_PERIOD_MS);
 }
 
@@ -247,7 +245,7 @@ void Device::handleRestoredValues()
     std::map<Property *, PublishQueueElement *> receivedValues;
     std::map<Property *, PublishQueueElement *> commandValues;
 
-    ESP_LOGI(TAG, "Working off received Messages, splitting them into received and commands");
+    log_i("Working off received Messages, splitting them into received and commands");
     PublishQueueElement *elm;
     while (xQueueReceive(_newMqttMessageQueue, &elm, 0))
     {
@@ -282,7 +280,7 @@ void Device::handleRestoredValues()
         }
     }
 
-    ESP_LOGI(TAG, "Working off received values, or use command value if present.");
+    log_i("Working off received values, or use command value if present.");
     auto tmpRec = receivedValues;
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpRec.begin(); it != tmpRec.end(); it++)
     {
@@ -295,12 +293,12 @@ void Device::handleRestoredValues()
                 elm = commandValues[p];
                 commandValues.erase(p);
                 comesFromCommand = true;
-                ESP_LOGV(TAG, "COMMAND CHANNEL FOR: Property %s with CMD-Value '%s' DATA-Value '%s'", p->getName(), elm->payload, it->second->payload);
+                log_v("COMMAND CHANNEL FOR: Property %s with CMD-Value '%s' DATA-Value '%s'", p->getName(), elm->payload, it->second->payload);
             }
             else
             {
                 elm = it->second;
-                ESP_LOGV(TAG, "DATA CHANNEL FOR: Property %s with Topic %s.", p->getName(), p->getTopic());
+                log_v("DATA CHANNEL FOR: Property %s with Topic %s.", p->getName(), p->getTopic());
             }
         }
         else
@@ -330,11 +328,11 @@ void Device::handleRestoredValues()
 
     // Think about basically ignoring/just deleting stuff in commandValues, since returendValues should be more present than Command channel!
     auto tmpCommand = commandValues;
-    ESP_LOGI(TAG, "Working off left overs in command channels!");
+    log_i("Working off left overs in command channels!");
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpCommand.begin(); it != tmpCommand.end(); it++)
     {
         Property *p = it->first;
-        ESP_LOGI(TAG, "LeftOver: Property %s with Topic %s.", p->getName(), p->getTopic());
+        log_i("LeftOver: Property %s with Topic %s.", p->getName(), p->getTopic());
         elm = it->second;
 
         p->setValue(elm->payload);
@@ -352,7 +350,7 @@ void Device::handleRestoredValues()
     {
         _defaultsPublished = true;
         auto tmp = _topicCallbacks;
-        ESP_LOGI(TAG, "Handling defaults for properties");
+        log_i("Handling defaults for properties");
         for (auto valuePair : tmp)
         {
             Property *p = valuePair.second;
@@ -362,11 +360,11 @@ void Device::handleRestoredValues()
             {
                 if (p == nullptr || !p->getName() || !p->getId())
                 {
-                    ESP_LOGV(TAG, "Property for Topic had sth. empty %s", topic);
+                    log_v("Property for Topic had sth. empty %s", topic);
                     continue;
                 }
 
-                ESP_LOGV(TAG, "Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
+                log_v("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
                          p->getId(), p->getTopic(), topic);
                 _client->unsubscribe(p->getTopic());
                 p->setValue(p->getValue(), true); // pub defaults, if we didnt receive some...
@@ -374,7 +372,7 @@ void Device::handleRestoredValues()
                 vTaskDelay(pdMS_TO_TICKS(40));
             }
         }
-        ESP_LOGI(TAG, "Defaults handling done");
+        log_i("Defaults handling done");
         _setupDone = true;
     }
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -387,7 +385,7 @@ void Device::handleRestoredValues()
 
 void Device::onMqttConnectCallback(bool sessionPresent)
 {
-    ESP_LOGI(TAG, "MQTT Connected - Starting Device Init/Setup");
+    log_i("MQTT Connected - Starting Device Init/Setup");
     _connectionTimeStamp = millis();
     xTaskCreateUniversal(
         this->startInitOrSetupTaskCode,
@@ -401,14 +399,14 @@ void Device::onMqttConnectCallback(bool sessionPresent)
 
 void Device::onMqttDisconnectCallback(AsyncMqttClientDisconnectReason reason)
 {
-    ESP_LOGE(TAG, "Lost MQTT connection reason: %d", reason);
+    log_e("Lost MQTT connection reason: %d", reason);
     setState(DSTATE_LOST);
     vTaskSuspend(_taskStatsHandling);
     vTaskSuspend(_taskNewMqttMessages);
 
     if (WiFi.isConnected())
     {
-        ESP_LOGI(TAG, "Starting Timer");
+        log_i("Starting Timer");
         xTimerStart(_mqttReconnectTimer, 0);
     }
 }
@@ -422,10 +420,10 @@ void Device::startInitOrSetupTaskCode(void *parameter)
 {
     Device *crntDevice = (Device *)parameter;
 
-    ESP_LOGI(TAG, "StartOrInit Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
+    log_i("StartOrInit Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
     if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
     {
-        ESP_LOGI(TAG, "startInitOrSetupTask, wifi or device not connected: WiFi = %s Device = %s",
+        log_i("startInitOrSetupTask, wifi or device not connected: WiFi = %s Device = %s",
                  WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
                  crntDevice->_client->connected() ? "CONNECTED" : "LOST");
         vTaskDelete(nullptr);
@@ -445,12 +443,12 @@ void Device::startInitOrSetupTaskCode(void *parameter)
     }
     if (crntDevice->getState() == DSTATE_ALERT)
     {
-        ESP_LOGE(TAG, "FATAL ERROR CREATING HOMIE DEVICE");
+        log_e("FATAL ERROR CREATING HOMIE DEVICE");
         vTaskDelete(nullptr);
     }
-    // ESP_LOGE(TAG, "Pre: FreeHeap '%d' MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+    // log_e("Pre: FreeHeap '%d' MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
     crntDevice->handleRestoredValues();
-    // ESP_LOGE(TAG, "Post: FreeHeap '%d'  MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+    // log_e("Post: FreeHeap '%d'  MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
     vTaskDelete(nullptr);
 }
 
@@ -460,17 +458,17 @@ void Device::statsTaskCode(void *parameter)
     vTaskSuspend(nullptr);
     for (;;)
     {
-        ESP_LOGV(TAG, "statsTaskCode Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
+        log_v("statsTaskCode Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
         if (crntDevice->_stats.size() == 0)
         {
-            ESP_LOGI(TAG, "Stat task suspended, no Stats in vector");
+            log_i("Stat task suspended, no Stats in vector");
             vTaskSuspend(nullptr);
             continue;
         }
 
         if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
         {
-            ESP_LOGI(TAG, "statsTaskCode, wifi or device not connected: WiFi = %s Device = %s",
+            log_i("statsTaskCode, wifi or device not connected: WiFi = %s Device = %s",
                      WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
                      crntDevice->_client->connected() ? "CONNECTED" : "LOST");
             vTaskSuspend(nullptr);
@@ -497,11 +495,11 @@ void Device::handleIncomingMqttTaskCode(void *parameter)
         {
             const char *tPtr = elm->topic;
             auto it = crntDevice->_topicCallbacks.find(tPtr);
-            ESP_LOGV(TAG, "MQTT: topic: '%s' payload '%s'", tPtr, elm->payload);
+            log_v("MQTT: topic: '%s' payload '%s'", tPtr, elm->payload);
             if (it != crntDevice->_topicCallbacks.end())
             {
                 Property *p = it->second;
-                ESP_LOGV(TAG, "Found a matching callback for topic '%s' property: %s(%s)", tPtr,
+                log_v("Found a matching callback for topic '%s' property: %s(%s)", tPtr,
                          p->getName(), p->getId());
 
                 p->setValue(elm->payload);
@@ -524,39 +522,39 @@ void Device::timerCode(TimerHandle_t timer)
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        ESP_LOGI(TAG, "Connecting to MQTT...");
+        log_i("Connecting to MQTT...");
         args->device->_client->connect();
     }
     else
     {
-        ESP_LOGI(TAG, "Stopping Timer since WiFi isnt Connected");
+        log_i("Stopping Timer since WiFi isnt Connected");
         xTimerStop(timer, 0);
     }
 }
 //
 void Device::onWiFiEventCallback(WiFiEvent_t event)
 {
-    // ESP_LOGV(TAG, "[WiFi-event] event: %d\n", event);
+    // log_v("[WiFi-event] event: %d\n", event);
     switch (event)
     {
     case SYSTEM_EVENT_STA_CONNECTED:
-        ESP_LOGI(TAG, "Station Connected");
+        log_i("Station Connected");
         break;
 
     case SYSTEM_EVENT_STA_GOT_IP:
     {
-        ESP_LOGI(TAG, "Received IP Adress: %s", WiFi.localIP().toString().c_str());
-        ESP_LOGI(TAG, "Wifi Ready!");
+        log_i("Received IP Adress: %s", WiFi.localIP().toString().c_str());
+        log_i("Wifi Ready!");
         _client->connect();
         // xTimerStart(_mqttReconnectTimer, 0);
         break;
     }
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        ESP_LOGE(TAG, "WiFi lost connection");
+        log_e("WiFi lost connection");
         xTimerStop(_mqttReconnectTimer, 0);
         break;
     default:
-        ESP_LOGI(TAG, "[WiFi-event] %d", event);
+        log_i("[WiFi-event] %d", event);
     }
 }
 

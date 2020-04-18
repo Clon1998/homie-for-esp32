@@ -51,7 +51,7 @@ void onColorChanged(Property *property)
 
 void getFreeHeap(Stats *stat)
 {
-  stat->setValue(String(ESP.getFreeHeap()).c_str());
+  stat->setValue(ESP.getFreeHeap());
 }
 
 Property *speedProp;
@@ -91,7 +91,7 @@ void setup()
 void loop()
 {
   int newSpeed = speedProp->getValueAsInt() + random(5);
-  speedProp->setValue(String(newSpeed).c_str());
+  speedProp->setValue(newSpeed);
 
   vTaskDelay(pdMS_TO_TICKS(1000));
 }

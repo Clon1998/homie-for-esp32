@@ -46,6 +46,15 @@ public:
         this->_value = valueBuff;
     }
 
+    void setValue(String value)
+    {
+        setValue(value.c_str());
+    }
+
+    void setValue(int value) {
+        setValue(String(value).c_str());
+    }
+
     const char * getValue()
     {
         return _value;
