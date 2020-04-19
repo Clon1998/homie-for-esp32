@@ -12,63 +12,73 @@ class Node
 private:
     Device *_parent;
 
-    const char* _name;
-    const char* _id;
-    const char* _type;
+    const char *_name;
+    const char *_id;
+    const char *_type;
     std::vector<Property *> _properties;
     AsyncMqttClient *_client;
 
-    char* prefixedNodeTopic(char* buff, const char* d);
+    char *prefixedNodeTopic(char *buff, const char *d);
+
 public:
     Node(Device *src, AsyncMqttClient *client);
     ~Node();
 
-    Property *addProperty(const char *id, const char *name, HomieDataType dataType);
     void setup();
+
     void init();
+
+    /**
+     * @brief This method creates a new Property with the given 
+     * name,id,dataType, adds it to the node and returns the property.
+     * 
+     * @param id 
+     * @param name 
+     * @param dataType 
+     * @return Property* the newly created and added property
+     */
+    Property *addProperty(const char *id, const char *name, HomieDataType dataType);
+
+    /**
+     * @brief This method adds a Property to the node.
+     * 
+     * @param property the Property to add
+     * @return Property* the Property added
+     */
+    Property *addProperty(Property * property);
 
     Device *getParent()
     {
         return this->_parent;
     }
-//    void setParent(Device *parent)
-//    {
-//        this->_parent = parent;
-//    }
-//
-//    String getName()
-//    {
-//        return this->_name;
-//    }
+
+    const char *getName()
+    {
+        return this->_name;
+    }
+
     void setName(const char *name)
     {
         this->_name = name;
     }
 
-    const char* getId()
+    const char *getId()
     {
         return this->_id;
     }
+
     void setId(const char *id)
     {
         this->_id = id;
     }
-//
-//    String getType()
-//    {
-//        return this->_type;
-//    }
+
+    const char *getType()
+    {
+        return this->_type;
+    }
+
     void setType(const char *type)
     {
         this->_type = type;
     }
-//
-//    std::vector<Property *> getProperties()
-//    {
-//        return this->_properties;
-//    }
-//    void setProperties(std::vector<Property *> properties)
-//    {
-//        this->_properties = properties;
-//    }
 };

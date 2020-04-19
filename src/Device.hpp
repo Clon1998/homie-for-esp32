@@ -16,6 +16,7 @@
 #endif
 
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
+typedef std::function<void(Device * device)> OnDeviceSetupDoneCallback;
 
 struct CmpStr
 {
@@ -64,7 +65,9 @@ private:
     const char *_extensions;
 
     bool _setupDone = false;
-    bool _defaultsPublished = false;
+
+
+
     int _statsInterval = 60;
 
     char *_workingBuffer;
@@ -72,6 +75,7 @@ private:
 
     std::map<const char *, Property *, CmpStr> _topicCallbacks;
     std::vector<OnDeviceStateChangedCallback> _onDeviceStateChangedCallbacks;
+    std::vector<OnDeviceSetupDoneCallback> _onDeviceSetupDoneCallbacks;
 
     QueueHandle_t _newMqttMessageQueue;
 
@@ -80,7 +84,7 @@ private:
 
     TimerHandle_t _mqttReconnectTimer;
 
-    void handleRestoredValues();
+    void restoreRetainedProperties();
 
     static void startInitOrSetupTaskCode(void *parameter);
 
@@ -151,10 +155,21 @@ public:
 
     /**
      * @brief Adds a new OnDeviceStatChangedCallback to the Callback.
+     * These callbacks will be called when ever the device state changes.
      * 
      * @param callback 
      */
     void onDeviceStateChanged(OnDeviceStateChangedCallback callback);
+
+
+    /**
+     * @brief Adds a new OnDeviceSetupDoneCallback to the Callback.
+     * These callbacks will be called once after the device published 
+     * the defaults and the device setup is done.
+     * 
+     * @param callback 
+     */
+    void onDeviceSetupDoneCallback(OnDeviceSetupDoneCallback callback);
 
     /**
      * @brief extends a "topic" with the baseTopic of this Device
@@ -240,17 +255,6 @@ public:
     bool isSetupDone()
     {
         return this->_setupDone;
-    }
-
-    /**
-     * @brief are the defaults Published
-     * 
-     * @return true if the defaults are published
-     * @return false if the defaults are not published
-     */
-    bool areDefaultsPublished()
-    {
-        return this->_defaultsPublished;
     }
 
     /**

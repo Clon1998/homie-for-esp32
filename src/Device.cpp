@@ -186,7 +186,6 @@ void Device::init()
     }
 
     log_v("Device-Init Base-Topic '%s'", _topic);
-    _defaultsPublished = false;
     setState(DSTATE_INIT);
 
     _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, WiFi.localIP().toString().c_str());
@@ -237,7 +236,7 @@ void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr,
     xQueueSendToBack(_newMqttMessageQueue, &tmp, 20 / portTICK_PERIOD_MS);
 }
 
-void Device::handleRestoredValues()
+void Device::restoreRetainedProperties()
 {
     vTaskSuspend(_taskNewMqttMessages);
     //Wait for the msgs to come in!
@@ -346,9 +345,8 @@ void Device::handleRestoredValues()
         delete elm;
     }
 
-    if (!_defaultsPublished)
+    if (!_setupDone)
     {
-        _defaultsPublished = true;
         auto tmp = _topicCallbacks;
         log_i("Handling defaults for properties");
         for (auto valuePair : tmp)
@@ -372,8 +370,10 @@ void Device::handleRestoredValues()
                 vTaskDelay(pdMS_TO_TICKS(40));
             }
         }
-        log_i("Defaults handling done");
+        log_i("Defaults handling done... Setup done");
         _setupDone = true;
+        for (auto callback : _onDeviceSetupDoneCallbacks)
+            callback(this);
     }
     vTaskDelay(pdMS_TO_TICKS(500));
     setState(DSTATE_READY);
@@ -416,6 +416,11 @@ void Device::onDeviceStateChanged(OnDeviceStateChangedCallback callback)
     _onDeviceStateChangedCallbacks.push_back(callback);
 }
 
+void Device::onDeviceSetupDoneCallback(OnDeviceSetupDoneCallback callback)
+{
+    _onDeviceSetupDoneCallbacks.push_back(callback);
+}
+
 void Device::startInitOrSetupTaskCode(void *parameter)
 {
     Device *crntDevice = (Device *)parameter;
@@ -447,7 +452,7 @@ void Device::startInitOrSetupTaskCode(void *parameter)
         vTaskDelete(nullptr);
     }
     // log_e("Pre: FreeHeap '%d' MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
-    crntDevice->handleRestoredValues();
+    crntDevice->restoreRetainedProperties();
     // log_e("Post: FreeHeap '%d'  MinFreeBlock '%d'", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
     vTaskDelete(nullptr);
 }

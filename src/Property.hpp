@@ -30,7 +30,9 @@ private:
     size_t _valueSize;
 
     AsyncMqttClient *_client;
+    
     char *prefixedPropertyTopic(char *buff, const char *d);
+
     /**
      * @brief checks if the value matches the format
      * return true if the value is correct!
@@ -48,21 +50,11 @@ public:
     void setup();
     void init();
 
-    //    Node *getParent()
-    //    {
-    //        return this->_parent;
-    //    }
-    //    void setParent(Node *parent)
-    //    {
-    //        this->_parent = parent;
-    //    }
-    //
     const char *getName()
     {
         return this->_name;
     }
 
-    //
     const char *getId()
     {
         return this->_id;
@@ -92,37 +84,32 @@ public:
     {
         this->_retained = retained;
     }
-    //
-    //    String getUnit()
-    //    {
-    //        return this->_unit;
-    //    }
+
+    const char *getUnit()
+    {
+        return this->_unit;
+    }
+
     void setUnit(const char *unit)
     {
         this->_unit = unit;
     }
-    //
-    //    String getFormat()
-    //    {
-    //        return this->_format;
-    //    }
+
+    const char *getFormat()
+    {
+        return this->_format;
+    }
+
     void setFormat(const char *format)
     {
         this->_format = format;
     }
-    //
 
-    //
     const char *getTopic()
     {
         return this->_topic;
     }
-    ////    void setTopic(const char *topic)
-    ////    {
-    ////        this->_topic = topic;
-    ////        this->_topicSet = topic + "/set";
-    ////    }
-    ////
+
     const char *getTopicSet()
     {
         return this->_topicSet;
@@ -142,6 +129,7 @@ public:
      * @brief Set the Value of the Property,
      * if updateToMqtt is set to TRUE it will publish to the SET channel,
      * the device will receive that MQTT publish and kicks off the callback.
+     * Note that the value will be copied into the value buffer of the Property object.
      * 
      * @param value 
      * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
@@ -152,6 +140,7 @@ public:
      * @brief Set the Value of the Property,
      * if updateToMqtt is set to TRUE it will publish to the SET channel,
      * the device will receive that MQTT publish and kicks off the callback.
+     * Note that the value will be copied into the value buffer of the Property object.
      * 
      * @param value 
      * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
@@ -159,7 +148,7 @@ public:
     void setValue(String value, bool updateToMqtt = false);
 
     void setValue(int value, bool updateToMqtt = false);
-    
+
     void setValue(bool value, bool updateToMqtt = false);
 
     void setDefaultValue(const char *value);

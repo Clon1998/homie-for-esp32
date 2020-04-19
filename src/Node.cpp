@@ -11,9 +11,13 @@ Node::Node(Device *src, AsyncMqttClient *client) : _parent(src),
 
 Property *Node::addProperty(const char *id, const char *name, HomieDataType dataType)
 {
-    Property *p = new Property(this, _client, id, name, dataType);
-    this->_properties.push_back(p);
-    return p;
+    return addProperty(new Property(this, _client, id, name, dataType));
+}
+
+Property *Node::addProperty(Property *property)
+{
+    this->_properties.push_back(property);
+    return property;
 }
 
 char *Node::prefixedNodeTopic(char *buff, const char *d)
