@@ -1,7 +1,11 @@
 # homie-for-esp32
 
 I created this library for the ESP32 because i wanted to utilize and play around with the xCreateTask/multitasking of the ESP32.
-I am not an expert in c/c++ and just started to learn it.
+While this library does not implement all of the Homie Convention features e.g. Broadcasts are missing, it could be a good base to implement more features.
+
+Currently I cant provide any additional documentation for this project besides the example and the method descriptions/code comments.
+
+This project was developed and tested with the Homie Controller of OpenHab.
 
 ## Example
 ```
@@ -42,3 +46,4 @@ void getFreeHeap(Stats *stat)
 ...
 
 ```
+For the complete Example check the example folder
