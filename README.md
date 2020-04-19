@@ -1,4 +1,5 @@
 # homie-for-esp32
+Implementation of Homie 3.0.0/3.0.1.
 
 I created this library for the ESP32 because i wanted to utilize and play around with the xCreateTask/multitasking of the ESP32.
 While this library does not implement all of the Homie Convention features e.g. Broadcasts are missing, it could be a good base to implement more features.
