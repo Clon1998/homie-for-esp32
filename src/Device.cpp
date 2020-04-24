@@ -24,10 +24,12 @@ const char *stateEnumToString(HomieDeviceState e)
 }
 
 Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _client(client),
-                                                                            _id(id),
                                                                             _name(nullptr),
                                                                             _extensions(nullptr)
 {
+    char *idBuff = new char[strlen(id) + 1];
+    strcpy(idBuff, id);
+    _id = idBuff;
 
     char *topic = new char[6 + strlen(_id) + 2]; // last + 6 for range _65536, last + 4 for /set
     strcpy(topic, "homie/");
@@ -39,6 +41,16 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
     strcpy(topicLw, topic);
     strcat(topicLw, "$state");
     _lwTopic = topicLw;
+
+    const char* macFromWifi = WiFi.macAddress().c_str();
+    char *macBuff = new char[strlen(macFromWifi) + 1];
+    strcpy(macBuff, macFromWifi);
+    _mac = macBuff;    
+    
+    const char* homieVersion = HOMIE_VER;
+    char *versionBuff = new char[strlen(homieVersion) + 1];
+    strcpy(versionBuff, homieVersion);
+    _homieVersion = versionBuff;
 
     log_i("Setting LW to: %s", _lwTopic);
     client->setWill(_lwTopic, 1, true, "lost");
@@ -86,10 +98,9 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
 
 Node *Device::addNode(const char *id)
 {
-    Node *n = new Node(this, _client);
+    Node *n = new Node(this, _client, id);
     this->_nodes.push_back(n);
-    n->setId(id);
-
+    
     return n;
 }
 
@@ -125,8 +136,8 @@ void Device::setup()
     _client->publish(prefixedTopic(_workingBuffer, "$homie"), 1, true, _homieVersion);
     _client->publish(prefixedTopic(_workingBuffer, "$name"), 1, true, _name);
     _client->publish(prefixedTopic(_workingBuffer, "$extensions"), 1, true, _extensions);
-    _client->publish(prefixedTopic(_workingBuffer, "$mac"), 1, true, WiFi.macAddress().c_str());
-    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, WiFi.localIP().toString().c_str());
+    _client->publish(prefixedTopic(_workingBuffer, "$mac"), 1, true, _mac);
+    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
     _client->publish(prefixedTopic(_workingBuffer, "$stats/interval"), 1, true, String(_statsInterval).c_str());
 
     String statIds((char *)0);
@@ -188,7 +199,7 @@ void Device::init()
     log_v("Device-Init Base-Topic '%s'", _topic);
     setState(DSTATE_INIT);
 
-    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, WiFi.localIP().toString().c_str());
+    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
     for (auto const &node : _nodes)
     {
         node->init();
@@ -550,6 +561,7 @@ void Device::onWiFiEventCallback(WiFiEvent_t event)
     {
         log_i("Received IP Adress: %s", WiFi.localIP().toString().c_str());
         log_i("Wifi Ready!");
+        _ip = WiFi.localIP();
         _client->connect();
         // xTimerStart(_mqttReconnectTimer, 0);
         break;

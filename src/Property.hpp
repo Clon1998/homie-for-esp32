@@ -92,7 +92,12 @@ public:
 
     void setUnit(const char *unit)
     {
-        this->_unit = unit;
+        if (_unit)
+            delete[] _unit;
+
+        char *_unitbuff = new char[strlen(unit) + 1];
+        strcpy(_unitbuff, unit);
+        _unit = _unitbuff;
     }
 
     const char *getFormat()
@@ -102,7 +107,12 @@ public:
 
     void setFormat(const char *format)
     {
-        this->_format = format;
+        if (_format)
+            delete[] _format;
+
+        char *_formatbuff = new char[strlen(format) + 1];
+        strcpy(_formatbuff, format);
+        _format = _formatbuff;
     }
 
     const char *getTopic()

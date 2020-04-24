@@ -1,12 +1,14 @@
 #include <Node.hpp>
 #include <Device.hpp>
 
-Node::Node(Device *src, AsyncMqttClient *client) : _parent(src),
+Node::Node(Device *src, AsyncMqttClient *client, const char *id) : _parent(src),
                                                    _name(nullptr),
-                                                   _id(nullptr),
                                                    _type(nullptr),
                                                    _client(client)
 {
+    char *idBuff = new char[strlen(id) + 1];
+    strcpy(idBuff, id);
+    _id = idBuff;
 }
 
 Property *Node::addProperty(const char *id, const char *name, HomieDataType dataType)

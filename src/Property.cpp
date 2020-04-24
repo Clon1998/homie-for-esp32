@@ -60,14 +60,20 @@ bool isNumeric(const char *s)
 
 Property::Property(Node *src, AsyncMqttClient *client, const char *id, const char *name, HomieDataType dataType) : _parent(src),
                                                                                                                    _topic(nullptr),
-                                                                                                                   _name(name),
-                                                                                                                   _id(id),
+                                                                                                                   _topicSet(nullptr),
                                                                                                                    _dataType(dataType),
                                                                                                                    _unit(nullptr),
                                                                                                                    _format(nullptr),
                                                                                                                    _value(nullptr),
                                                                                                                    _client(client)
 {
+    char *idBuff = new char[strlen(id) + 1];
+    strcpy(idBuff, id);
+    _id = idBuff;
+
+    char *nameBuff = new char[strlen(name) + 1];
+    strcpy(nameBuff, id);
+    _name = nameBuff;
 
     switch (_dataType)
     {

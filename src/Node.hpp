@@ -21,7 +21,7 @@ private:
     char *prefixedNodeTopic(char *buff, const char *d);
 
 public:
-    Node(Device *src, AsyncMqttClient *client);
+    Node(Device *src, AsyncMqttClient *client, const char *id);
     ~Node();
 
     void setup();
@@ -45,7 +45,7 @@ public:
      * @param property the Property to add
      * @return Property* the Property added
      */
-    Property *addProperty(Property * property);
+    Property *addProperty(Property *property);
 
     Device *getParent()
     {
@@ -59,17 +59,17 @@ public:
 
     void setName(const char *name)
     {
-        this->_name = name;
+        if (_name)
+            delete[] _name;
+
+        char *_namebuff = new char[strlen(name) + 1];
+        strcpy(_namebuff, name);
+        _name = _namebuff;
     }
 
     const char *getId()
     {
         return this->_id;
-    }
-
-    void setId(const char *id)
-    {
-        this->_id = id;
     }
 
     const char *getType()
@@ -79,6 +79,11 @@ public:
 
     void setType(const char *type)
     {
-        this->_type = type;
+        if (_type)
+            delete[] _type;
+
+        char *_typebuff = new char[strlen(type) + 1];
+        strcpy(_typebuff, type);
+        _type = _typebuff;
     }
 };

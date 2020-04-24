@@ -58,15 +58,13 @@ private:
 
     const char *_topic;
     const char *_lwTopic;
-    const char *_homieVersion = HOMIE_VER;
+    const char *_homieVersion;
     const char *_id;
     const char *_name;
     const char *_mac;
     const char *_extensions;
 
     bool _setupDone = false;
-
-
 
     int _statsInterval = 60;
 
@@ -213,7 +211,12 @@ public:
      */
     void setName(const char *name)
     {
-        this->_name = name;
+        if (_name)
+            delete[] _name;
+            
+        char * _namebuff = new char[strlen(name) + 1];
+        strcpy(_namebuff, name);
+        _name = _namebuff;
     }
 
     /**
