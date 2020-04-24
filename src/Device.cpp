@@ -42,12 +42,12 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
     strcat(topicLw, "$state");
     _lwTopic = topicLw;
 
-    const char* macFromWifi = WiFi.macAddress().c_str();
+    const char *macFromWifi = WiFi.macAddress().c_str();
     char *macBuff = new char[strlen(macFromWifi) + 1];
     strcpy(macBuff, macFromWifi);
-    _mac = macBuff;    
-    
-    const char* homieVersion = HOMIE_VER;
+    _mac = macBuff;
+
+    const char *homieVersion = HOMIE_VER;
     char *versionBuff = new char[strlen(homieVersion) + 1];
     strcpy(versionBuff, homieVersion);
     _homieVersion = versionBuff;
@@ -100,7 +100,7 @@ Node *Device::addNode(const char *id)
 {
     Node *n = new Node(this, _client, id);
     this->_nodes.push_back(n);
-    
+
     return n;
 }
 
@@ -209,12 +209,13 @@ void Device::init()
 void Device::registerSettableProperty(Property *property)
 {
     log_v("Added new callback to map for property %s (%s) with topic: '%s' and topicSet: '%s'",
-             property->getName(), property->getId(), property->getTopic(), property->getTopicSet());
+          property->getName(), property->getId(), property->getTopic(), property->getTopicSet());
 
     _topicCallbacks[property->getTopicSet()] = property;
     vTaskDelay(pdMS_TO_TICKS(20));
-    
-    if (property->isRetained()) {
+
+    if (property->isRetained())
+    {
         _topicCallbacks[property->getTopic()] = property;
         vTaskDelay(pdMS_TO_TICKS(20));
     }
@@ -271,7 +272,6 @@ void Device::restoreRetainedProperties()
                 continue;
             }
 
-
             if (strcmp(elm->topic + (strlen(elm->topic) - 4), "/set") != 0)
             {
                 //Restored from last State
@@ -280,10 +280,13 @@ void Device::restoreRetainedProperties()
             else
             {
                 //Comes from SET Channel
-                if (elm->mqttProps.retain) {
+                if (elm->mqttProps.retain)
+                {
                     // Message was retained, ignoring all retained msgs in SET CHANNEL! As per Homie Spec!
                     delete elm;
-                } else {
+                }
+                else
+                {
                     commandValues[p] = elm;
                 }
             }
@@ -374,7 +377,7 @@ void Device::restoreRetainedProperties()
                 }
 
                 log_v("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
-                         p->getId(), p->getTopic(), topic);
+                      p->getId(), p->getTopic(), topic);
                 _client->unsubscribe(p->getTopic());
                 p->setValue(p->getValue(), true); // pub defaults, if we didnt receive some...
                 _topicCallbacks.erase(topic);
@@ -440,8 +443,8 @@ void Device::startInitOrSetupTaskCode(void *parameter)
     if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
     {
         log_i("startInitOrSetupTask, wifi or device not connected: WiFi = %s Device = %s",
-                 WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
-                 crntDevice->_client->connected() ? "CONNECTED" : "LOST");
+              WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
+              crntDevice->_client->connected() ? "CONNECTED" : "LOST");
         vTaskDelete(nullptr);
     }
 
@@ -474,7 +477,9 @@ void Device::statsTaskCode(void *parameter)
     vTaskSuspend(nullptr);
     for (;;)
     {
+#ifdef TASK_VERBOSE_LOGGING
         log_v("statsTaskCode Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
+#endif
         if (crntDevice->_stats.size() == 0)
         {
             log_i("Stat task suspended, no Stats in vector");
@@ -485,8 +490,8 @@ void Device::statsTaskCode(void *parameter)
         if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
         {
             log_i("statsTaskCode, wifi or device not connected: WiFi = %s Device = %s",
-                     WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
-                     crntDevice->_client->connected() ? "CONNECTED" : "LOST");
+                  WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
+                  crntDevice->_client->connected() ? "CONNECTED" : "LOST");
             vTaskSuspend(nullptr);
             continue;
         }
@@ -516,7 +521,7 @@ void Device::handleIncomingMqttTaskCode(void *parameter)
             {
                 Property *p = it->second;
                 log_v("Found a matching callback for topic '%s' property: %s(%s)", tPtr,
-                         p->getName(), p->getId());
+                      p->getName(), p->getId());
 
                 p->setValue(elm->payload);
 
@@ -580,6 +585,8 @@ Stats *Device::addStats(const char *id, GetStatsFunction fnc)
     Stats *s = new Stats(this, _client, id);
     _stats.push_back(s);
     s->setFunc(fnc);
-
+    if (_stats.size() == 1 && _state == DSTATE_READY) {
+        vTaskResume(_taskStatsHandling);
+    }
     return s;
 }

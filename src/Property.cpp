@@ -298,7 +298,7 @@ void Property::setDefaultValue(const char *value)
     if (_retained)
         strcpy(_value, value);
     else
-        log_e(" A non retained Property should never have a default value!");
+        log_e("Property: %s (%s) | A non retained Property should never have a default value!", _name, _id);
 }
 
 void Property::setDefaultValue(String value)
