@@ -1,7 +1,7 @@
 {
     "name": "Homie-for-ESP32",
     "keywords": "Homie, MQTT, ESP32",
-    "description": "Libary implementing Homie 3.0.1 for the ESP32 utilizing ESP32's FreeRtos tasks",
+    "description": "Library implementing Homie 3.0.1 for the ESP32 utilizing ESP32's FreeRtos tasks",
     "repository":
     {
       "type": "git",

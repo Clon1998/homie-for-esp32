@@ -124,7 +124,7 @@ void Device::setup()
     if (!_name || !_id)
     {
         this->setState(DSTATE_ALERT);
-        log_e("The devices Name or ID is not set.");
+        log_e("The devices Name or ID is not set. Name:'%s' ID: '%s'", _name ? _name : "UNDEFINED", _id ? _id : "UNDEFINED");
         return;
     }
     //    "homie/" + id + "/"
@@ -168,7 +168,9 @@ void Device::setup()
 
     for (auto const &node : _nodes)
     {
-        node->setup();
+        if (!node->setup()) {
+            setState(DSTATE_ALERT);
+        };
     }
 }
 
@@ -585,7 +587,8 @@ Stats *Device::addStats(const char *id, GetStatsFunction fnc)
     Stats *s = new Stats(this, _client, id);
     _stats.push_back(s);
     s->setFunc(fnc);
-    if (_stats.size() == 1 && _state == DSTATE_READY) {
+    if (_stats.size() == 1 && _state == DSTATE_READY)
+    {
         vTaskResume(_taskStatsHandling);
     }
     return s;

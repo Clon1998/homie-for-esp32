@@ -32,13 +32,16 @@ char *Node::prefixedNodeTopic(char *buff, const char *d)
     return buff;
 }
 
-void Node::setup()
+bool Node::setup()
 {
+
     if (!_name || !_type || !_id)
     {
-        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
-        return;
+        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name? _name: "UNDEFINED", _type? _type: "UNDEFINED", _id? _id: "UNDEFINED");
+        return false;
     }
+
+    log_i("Starting Setup for Node %s (%s)", _name,_id);
 
     std::unique_ptr<char[]> nodeTopic(new char[strlen(_id) + 13]);
     // char* nodeTopic = new char[strlen(_id) + 13];// 12 for /$properties and 1 for line end
@@ -63,18 +66,14 @@ void Node::setup()
 
     for (auto const &prop : _properties)
     {
-        prop->setup();
+        if (!prop->setup());
+        return false;
     }
+    return true;
 }
 
 void Node::init()
 {
-    if (!_name || !_type || !_id)
-    {
-        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name, _type, _id);
-        return;
-    }
-
     log_v("Init for node %s (%s)", _name, _id);
 
     for (auto const &prop : _properties)

@@ -47,7 +47,7 @@ public:
     Property(Node *src, AsyncMqttClient *client, const char *id, const char *name, HomieDataType dataType);
     ~Property() {}
 
-    void setup();
+    bool setup();
     void init();
 
     const char *getName()

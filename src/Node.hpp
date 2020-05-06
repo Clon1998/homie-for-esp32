@@ -24,7 +24,7 @@ public:
     Node(Device *src, AsyncMqttClient *client, const char *id);
     ~Node();
 
-    void setup();
+    bool setup();
 
     void init();
 

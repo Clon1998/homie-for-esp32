@@ -110,16 +110,16 @@ char *Property::prefixedPropertyTopic(char *buff, const char *d)
     return buff;
 }
 
-void Property::setup()
+bool Property::setup()
 {
     if (!_name || !_id || _dataType == HOMIE_UNDEFINED)
     {
-        log_e("Property Name, Dataype or ID isnt set! Name: '%s' DataType: '%s' ID: '%s'", _name, _dataType,
-              _id);
-        return;
+        log_e("Property Name, Dataype or ID isnt set! Name: '%s' DataType: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _dataType ? _dataType : HOMIE_UNDEFINED,
+              _id ? _id : "UNDEFINED");
+        return false;
     }
 
-    log_v("Setup for property %s (%s)", _name, _id);
+    log_v("Starting setup for Property %s (%s)", _name, _id);
 
     Device *device = _parent->getParent();
 
@@ -149,16 +149,11 @@ void Property::setup()
         _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$format"), 1, true, _format);
 
     init();
+    return true;
 }
 
 void Property::init()
 {
-    if (!_name || !_id || _dataType == HOMIE_UNDEFINED)
-    {
-        log_e("Property Name, Dataype or ID isnt set! Name: '%s' DataType: '%s' ID: '%s'", _name, _dataType,
-              _id);
-        return;
-    }
     log_v("Init for property %s (%s) with base topic: '%s'", _name, _id, _topic);
 
     if (_retained)
