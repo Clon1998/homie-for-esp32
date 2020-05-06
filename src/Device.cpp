@@ -168,8 +168,10 @@ void Device::setup()
 
     for (auto const &node : _nodes)
     {
-        if (!node->setup()) {
+        if (!node->setup())
+        {
             setState(DSTATE_ALERT);
+            log_e("Error while setting up node: ", node->getName() ? node->getName() : "UNDEFINED", node->getId() ? node->getId() : "UNDEFINED");
         };
     }
 }

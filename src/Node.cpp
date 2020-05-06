@@ -41,7 +41,7 @@ bool Node::setup()
         return false;
     }
 
-    log_i("Starting Setup for Node %s (%s)", _name,_id);
+    log_v("Starting Setup for Node %s (%s)", _name,_id);
 
     std::unique_ptr<char[]> nodeTopic(new char[strlen(_id) + 13]);
     // char* nodeTopic = new char[strlen(_id) + 13];// 12 for /$properties and 1 for line end
@@ -66,8 +66,10 @@ bool Node::setup()
 
     for (auto const &prop : _properties)
     {
-        if (!prop->setup());
-        return false;
+        if (!prop->setup()){
+            log_e("Error while setting up property: ", prop->getName() ? prop->getName() : "UNDEFINED", prop->getId() ? prop->getId() : "UNDEFINED");
+            return false;
+        }
     }
     return true;
 }
