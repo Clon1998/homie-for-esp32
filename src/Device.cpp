@@ -24,12 +24,12 @@ const char *stateEnumToString(HomieDeviceState e)
 }
 
 Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _client(client),
-                                                                            _name(nullptr),
                                                                             _extensions(nullptr)
 {
     char *idBuff = new char[strlen(id) + 1];
     strcpy(idBuff, id);
     _id = idBuff;
+    _name = _id;
 
     char *topic = new char[6 + strlen(_id) + 2]; // last + 6 for range _65536, last + 4 for /set
     strcpy(topic, "homie/");
