@@ -15,6 +15,14 @@
 #define HOMIE_INCOMING_MSG_QUEUE 50
 #endif
 
+#ifndef CONFIG_HOMIE_INCOMING_RUNNING_CORE
+#define CONFIG_HOMIE_INCOMING_RUNNING_CORE -1
+#endif
+
+#ifndef CONFIG_HOMIE_STATS_RUNNING_CORE
+#define CONFIG_HOMIE_STATS_RUNNING_CORE -1
+#endif
+
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
 typedef std::function<void(Device * device)> OnDeviceSetupDoneCallback;
 

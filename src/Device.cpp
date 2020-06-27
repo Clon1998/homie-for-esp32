@@ -84,16 +84,16 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
         this,
         4,
         &_taskNewMqttMessages,
-        -1);
+        CONFIG_HOMIE_INCOMING_RUNNING_CORE);
 
     xTaskCreateUniversal(
         this->statsTaskCode,
         "homie_stats",
-        8192 * 2,
+        8192 * 3,
         this,
         2,
         &_taskStatsHandling,
-        -1);
+        CONFIG_HOMIE_STATS_RUNNING_CORE);
 }
 
 Node *Device::addNode(const char *id)
@@ -260,7 +260,9 @@ void Device::restoreRetainedProperties()
     std::map<Property *, PublishQueueElement *> receivedValues;
     std::map<Property *, PublishQueueElement *> commandValues;
 
-    log_i("Working off received Messages, splitting them into received and commands");
+    log_i("---------------------------------------");
+    log_i("Working off received Messages, splitting them into REC_MAP and CMD_MAP");
+    log_i("---------------------------------------");
     PublishQueueElement *elm;
     while (xQueueReceive(_newMqttMessageQueue, &elm, 0))
     {
@@ -297,7 +299,9 @@ void Device::restoreRetainedProperties()
         }
     }
 
-    log_i("Working off received values, or use command value if present.");
+    log_i("---------------------------------------");
+    log_i("Working off values in REC_MAP, or use value in CMD_MAP if present.");
+    log_i("---------------------------------------");
     auto tmpRec = receivedValues;
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpRec.begin(); it != tmpRec.end(); it++)
     {
@@ -345,7 +349,9 @@ void Device::restoreRetainedProperties()
 
     // Think about basically ignoring/just deleting stuff in commandValues, since returendValues should be more present than Command channel!
     auto tmpCommand = commandValues;
-    log_i("Working off left overs in command channels!");
+    log_i("---------------------------------------");
+    log_i("Working off left overs in CMD_MAP!");
+    log_i("---------------------------------------");
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpCommand.begin(); it != tmpCommand.end(); it++)
     {
         Property *p = it->first;
@@ -366,7 +372,9 @@ void Device::restoreRetainedProperties()
     if (!_setupDone)
     {
         auto tmp = _topicCallbacks;
-        log_i("Handling defaults for properties");
+        log_i("---------------------------------------");
+        log_i("Handling default value for properties");
+        log_i("---------------------------------------");
         for (auto valuePair : tmp)
         {
             Property *p = valuePair.second;
@@ -383,12 +391,25 @@ void Device::restoreRetainedProperties()
                 log_v("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
                       p->getId(), p->getTopic(), topic);
                 _client->unsubscribe(p->getTopic());
-                p->setValue(p->getValue(), true); // pub defaults, if we didnt receive some...
+
+                if (p->isRetained())
+                {
+                    p->setValue(p->getValue());
+
+                    PropertySetCallback callback = p->getCallback();
+                    if (callback != nullptr)
+                    {
+                        callback(p);
+                    }
+                }
                 _topicCallbacks.erase(topic);
                 vTaskDelay(pdMS_TO_TICKS(40));
             }
         }
-        log_i("Defaults handling done... Setup done");
+        log_i("---------------------------------------");
+        log_i("Defaults handling... DONE");
+        log_i("Setup... DONE");
+        log_i("---------------------------------------");
         _setupDone = true;
         for (auto callback : _onDeviceSetupDoneCallbacks)
             callback(this);
@@ -412,7 +433,7 @@ void Device::onMqttConnectCallback(bool sessionPresent)
         this,
         2,
         nullptr,
-        -1);
+        CONFIG_HOMIE_INCOMING_RUNNING_CORE);
 }
 
 void Device::onMqttDisconnectCallback(AsyncMqttClientDisconnectReason reason)
@@ -442,8 +463,9 @@ void Device::onDeviceSetupDoneCallback(OnDeviceSetupDoneCallback callback)
 void Device::startInitOrSetupTaskCode(void *parameter)
 {
     Device *crntDevice = (Device *)parameter;
-
+    log_i("---------------------------------------");
     log_i("StartOrInit Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
+    log_i("---------------------------------------");
     if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
     {
         log_i("startInitOrSetupTask, wifi or device not connected: WiFi = %s Device = %s",
@@ -459,10 +481,16 @@ void Device::startInitOrSetupTaskCode(void *parameter)
     if (crntDevice->_setupDone)
     {
         crntDevice->init();
+        log_i("---------------------------------------");
+        log_i("Device init... DONE");
+        log_i("---------------------------------------");
     }
     else
     {
         crntDevice->setup();
+        log_i("---------------------------------------");
+        log_i("Device setup... DONE");
+        log_i("---------------------------------------");
     }
     if (crntDevice->getState() == DSTATE_ALERT)
     {
