@@ -8,12 +8,12 @@
 class Node;
 class Property;
 
-typedef std::function<void(Property *property)> PropertySetCallback;
+typedef std::function<void(Property &property)> PropertySetCallback;
 
 class Property
 {
 private:
-    Node *_parent;
+    Node &_parent;
     const char *_topic;
     const char *_topicSet;
 
@@ -29,7 +29,7 @@ private:
     char *_value;
     size_t _valueSize;
 
-    AsyncMqttClient *_client;
+    AsyncMqttClient &_client;
     
     char *prefixedPropertyTopic(char *buff, const char *d);
 
@@ -44,7 +44,7 @@ private:
     bool validateValue(const char *value);
 
 public:
-    Property(Node *src, AsyncMqttClient *client, const char *id, const char *name, HomieDataType dataType);
+    Property(Node &src, AsyncMqttClient &client, const char *id, const char *name, HomieDataType dataType);
     ~Property() {}
 
     bool setup();

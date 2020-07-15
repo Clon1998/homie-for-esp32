@@ -58,7 +58,7 @@ bool isNumeric(const char *s)
     return *p == '\0';
 }
 
-Property::Property(Node *src, AsyncMqttClient *client, const char *id, const char *name, HomieDataType dataType) : _parent(src),
+Property::Property(Node &src, AsyncMqttClient &client, const char *id, const char *name, HomieDataType dataType) : _parent(src),
                                                                                                                    _topic(nullptr),
                                                                                                                    _topicSet(nullptr),
                                                                                                                    _dataType(dataType),
@@ -121,12 +121,12 @@ bool Property::setup()
 
     log_v("Starting setup for Property %s (%s)", _name, _id);
 
-    Device *device = _parent->getParent();
+    Device &device = _parent.getParent();
 
     //  homie/device/nodeid/propid/$retained
-    char *topic = new char[strlen(device->getTopic()) + strlen(_parent->getId()) + 1 + strlen(_id) + 1];
-    strcpy(topic, device->getTopic());
-    strcat(topic, _parent->getId());
+    char *topic = new char[strlen(device.getTopic()) + strlen(_parent.getId()) + 1 + strlen(_id) + 1];
+    strcpy(topic, device.getTopic());
+    strcat(topic, _parent.getId());
     strcat(topic, "/");
     strcat(topic, _id);
 
@@ -137,16 +137,16 @@ bool Property::setup()
     strcat(topicSet, "/set");
     _topicSet = topicSet;
 
-    _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$name"), 1, true, _name);
-    _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$datatype"), 1, true, dateTypeEnumToString(_dataType));
-    _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$settable"), 1, true, boolToString(_settable));
-    _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$retained"), 1, true, boolToString(_retained));
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$name"), 1, true, _name);
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$datatype"), 1, true, dateTypeEnumToString(_dataType));
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$settable"), 1, true, boolToString(_settable));
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$retained"), 1, true, boolToString(_retained));
 
     if (_unit)
-        _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$unit"), 1, true, _unit);
+        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$unit"), 1, true, _unit);
 
     if (_format)
-        _client->publish(prefixedPropertyTopic(device->getWorkingBuffer(), "/$format"), 1, true, _format);
+        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$format"), 1, true, _format);
 
     init();
     return true;
@@ -157,12 +157,12 @@ void Property::init()
     log_v("Init for property %s (%s) with base topic: '%s'", _name, _id, _topic);
 
     if (_retained)
-        _client->subscribe(_topic, 1);
+        _client.subscribe(_topic, 1);
 
     if (_settable)
     {
-        _parent->getParent()->registerSettableProperty(this);
-        _client->subscribe(prefixedPropertyTopic(_parent->getParent()->getWorkingBuffer(), "/set"), 1);
+        _parent.getParent().registerSettableProperty(*this);
+        _client.subscribe(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1);
     }
 }
 
@@ -201,9 +201,9 @@ void Property::setValue(const char *value, bool updateToMqtt)
         return;
 
     if (updateToMqtt)
-        _client->publish(prefixedPropertyTopic(_parent->getParent()->getWorkingBuffer(), "/set"), 1, true, _value);
+        _client.publish(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1, true, _value);
     else
-        _client->publish(_topic, 1, true, _value);
+        _client.publish(_topic, 1, true, _value);
 }
 
 void Property::setValue(String value, bool updateToMqtt)

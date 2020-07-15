@@ -6,23 +6,23 @@
 class Device;
 class Stats;
 
-typedef std::function<void(Stats*)> GetStatsFunction;
+typedef std::function<void(Stats&)> GetStatsFunction;
 
 class Stats
 {
 private:
-    Device *_parent;
+    Device &_parent;
     const char * _topic;
 
     const char * _name;
     const char * _id;
 
     const char * _value;
-    AsyncMqttClient *_client;
+    AsyncMqttClient &_client;
     GetStatsFunction _func;
 
 public:
-    Stats(Device *src, AsyncMqttClient *client, const char * statName);
+    Stats(Device &src, AsyncMqttClient &client, const char * statName);
     ~Stats() {}
 
     void publish();

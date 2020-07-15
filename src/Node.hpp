@@ -10,19 +10,25 @@ class Device;
 class Node
 {
 private:
-    Device *_parent;
+    Device &_parent;
 
     const char *_name;
     const char *_id;
     const char *_type;
     std::vector<Property *> _properties;
-    AsyncMqttClient *_client;
+    AsyncMqttClient &_client;
 
     char *prefixedNodeTopic(char *buff, const char *d);
 
 public:
-    Node(Device *src, AsyncMqttClient *client, const char *id);
-    ~Node();
+    Node(Device &src, AsyncMqttClient &client, const char *id);
+    ~Node()
+    {
+        for (auto &&prop : _properties)
+        {
+            delete prop;
+        }
+    };
 
     bool setup();
 
@@ -37,7 +43,7 @@ public:
      * @param dataType 
      * @return Property* the newly created and added property
      */
-    Property *addProperty(const char *id, const char *name, HomieDataType dataType);
+    Property &addProperty(const char *id, const char *name, HomieDataType dataType);
 
     /**
      * @brief This method adds a Property to the node.
@@ -45,9 +51,9 @@ public:
      * @param property the Property to add
      * @return Property* the Property added
      */
-    Property *addProperty(Property *property);
+    Property &addProperty(Property &property);
 
-    Device *getParent()
+    Device &getParent()
     {
         return this->_parent;
     }

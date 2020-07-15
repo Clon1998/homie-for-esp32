@@ -24,7 +24,7 @@
 #endif
 
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
-typedef std::function<void(Device * device)> OnDeviceSetupDoneCallback;
+typedef std::function<void(Device &device)> OnDeviceSetupDoneCallback;
 
 struct CmpStr
 {
@@ -40,7 +40,7 @@ struct PublishQueueElement
     const char *topic;
     const char *payload;
     AsyncMqttClientMessageProperties mqttProps;
-    
+
     ~PublishQueueElement()
     {
         // log_v("Destructor of PupQueElm");
@@ -61,7 +61,7 @@ private:
     std::vector<Node *> _nodes;
     std::vector<Stats *> _stats;
 
-    AsyncMqttClient *_client;
+    AsyncMqttClient &_client;
     IPAddress _ip;
 
     const char *_topic;
@@ -109,16 +109,26 @@ private:
     void onWiFiEventCallback(WiFiEvent_t event);
 
 public:
-    Device(AsyncMqttClient *client, const char *id, uint8_t buffSize = 128);
+    Device(AsyncMqttClient &client, const char *id, uint8_t buffSize = 128);
 
-    ~Device() {}
+    ~Device() {
+        for (auto &&node : _nodes)
+        {
+            delete node;
+        }
+        
+        for (auto &&stat : _stats)
+        {
+            delete stat;
+        }
+    }
     /**
      * @brief Allocates and adds a new Node to the device
      * 
      * @param id will be assigned to the node
      * @return Node* a ptr to the created Node
      */
-    Node *addNode(const char *id);
+    Node &addNode(const char *id);
 
     /**
      * @brief Allocates and adds new Node to the Device with more Node Parameters
@@ -128,7 +138,7 @@ public:
      * @param type will be the Type of the new Node
      * @return Node* a ptr to the creeated Node
      */
-    Node *addNode(const char *id, const char *name, const char *type);
+    Node &addNode(const char *id, const char *name, const char *type);
 
     /**
      * @brief Allocates and adds a new Stats Object to the device.
@@ -137,7 +147,7 @@ public:
      * @param fnc a function that supplies the Stats Object with values to publish.
      * @return Stats* a ptr to the created Stats Object
      */
-    Stats *addStats(const char *id, GetStatsFunction fnc);
+    Stats &addStats(const char *id, GetStatsFunction fnc);
 
     /**
      * @brief Sets up the Device
@@ -157,7 +167,7 @@ public:
      * Basically makes sure thath incomming MQTT Msgs can be mapped to the correct Propety.
      * @param property 
      */
-    void registerSettableProperty(Property *property);
+    void registerSettableProperty(Property &property);
 
     /**
      * @brief Adds a new OnDeviceStatChangedCallback to the Callback.
@@ -166,7 +176,6 @@ public:
      * @param callback 
      */
     void onDeviceStateChanged(OnDeviceStateChangedCallback callback);
-
 
     /**
      * @brief Adds a new OnDeviceSetupDoneCallback to the Callback.
@@ -221,8 +230,8 @@ public:
     {
         if (_name)
             delete[] _name;
-            
-        char * _namebuff = new char[strlen(name) + 1];
+
+        char *_namebuff = new char[strlen(name) + 1];
         strcpy(_namebuff, name);
         _name = _namebuff;
     }

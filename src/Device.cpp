@@ -23,7 +23,7 @@ const char *stateEnumToString(HomieDeviceState e)
     }
 }
 
-Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _client(client),
+Device::Device(AsyncMqttClient &client, const char *id, uint8_t buffSize) : _client(client),
                                                                             _extensions(nullptr)
 {
     char *idBuff = new char[strlen(id) + 1];
@@ -53,11 +53,11 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
     _homieVersion = versionBuff;
 
     log_i("Setting LW to: %s", _lwTopic);
-    client->setWill(_lwTopic, 1, true, "lost");
+    _client.setWill(_lwTopic, 1, true, "lost");
 
-    client->onConnect(bind(&Device::onMqttConnectCallback, this, std::placeholders::_1));
-    client->onDisconnect(bind(&Device::onMqttDisconnectCallback, this, std::placeholders::_1));
-    client->onMessage(bind(&Device::onMessageReceivedCallback, this, std::placeholders::_1, std::placeholders::_2,
+    _client.onConnect(bind(&Device::onMqttConnectCallback, this, std::placeholders::_1));
+    _client.onDisconnect(bind(&Device::onMqttDisconnectCallback, this, std::placeholders::_1));
+    _client.onMessage(bind(&Device::onMessageReceivedCallback, this, std::placeholders::_1, std::placeholders::_2,
                            std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
     WiFi.onEvent(bind(&Device::onWiFiEventCallback, this, std::placeholders::_1));
 
@@ -96,26 +96,26 @@ Device::Device(AsyncMqttClient *client, const char *id, uint8_t buffSize) : _cli
         CONFIG_HOMIE_STATS_RUNNING_CORE);
 }
 
-Node *Device::addNode(const char *id)
+Node &Device::addNode(const char *id)
 {
-    Node *n = new Node(this, _client, id);
-    this->_nodes.push_back(n);
+    Node &n = *new Node(*this, _client, id);
+    this->_nodes.push_back(&n);
 
     return n;
 }
 
-Node *Device::addNode(const char *id, const char *name, const char *type)
+Node &Device::addNode(const char *id, const char *name, const char *type)
 {
-    Node *n = addNode(id);
+    Node &n = addNode(id);
 
-    n->setName(name);
-    n->setType(type);
+    n.setName(name);
+    n.setType(type);
     return n;
 }
 
 void Device::setup()
 {
-    if (!_client->connected())
+    if (!_client.connected())
     {
         log_e("Tryed to init device, but MQTT client isnt connected!");
         return;
@@ -132,13 +132,13 @@ void Device::setup()
     log_i("Device-Setup Base-Topic '%s'", _topic);
     setState(DSTATE_INIT);
 
-    _client->publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
-    _client->publish(prefixedTopic(_workingBuffer, "$homie"), 1, true, _homieVersion);
-    _client->publish(prefixedTopic(_workingBuffer, "$name"), 1, true, _name);
-    _client->publish(prefixedTopic(_workingBuffer, "$extensions"), 1, true, _extensions);
-    _client->publish(prefixedTopic(_workingBuffer, "$mac"), 1, true, _mac);
-    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
-    _client->publish(prefixedTopic(_workingBuffer, "$stats/interval"), 1, true, String(_statsInterval).c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
+    _client.publish(prefixedTopic(_workingBuffer, "$homie"), 1, true, _homieVersion);
+    _client.publish(prefixedTopic(_workingBuffer, "$name"), 1, true, _name);
+    _client.publish(prefixedTopic(_workingBuffer, "$extensions"), 1, true, _extensions);
+    _client.publish(prefixedTopic(_workingBuffer, "$mac"), 1, true, _mac);
+    _client.publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$stats/interval"), 1, true, String(_statsInterval).c_str());
 
     String statIds((char *)0);
     // We only assume that every Stat is of max length 12, in my case it is!
@@ -151,7 +151,7 @@ void Device::setup()
     }
     if (_stats.size() > 0)
         statIds.remove(statIds.length() - 1);
-    _client->publish(prefixedTopic(_workingBuffer, "$stats"), 1, true, statIds.c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$stats"), 1, true, statIds.c_str());
 
     String nodeNames((char *)0);
     // We only assume thath every node name max len is 12, in my case it is!
@@ -164,7 +164,7 @@ void Device::setup()
     if (_nodes.size() > 0)
         nodeNames.remove(nodeNames.length() - 1);
 
-    _client->publish(prefixedTopic(_workingBuffer, "$nodes"), 1, true, nodeNames.c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$nodes"), 1, true, nodeNames.c_str());
 
     for (auto const &node : _nodes)
     {
@@ -187,7 +187,7 @@ char *Device::prefixedTopic(char *buff, const char *d)
 void Device::init()
 {
 
-    if (!_client->connected())
+    if (!_client.connected())
     {
         log_e("Tryed to init device, but MQTT client isnt connected!");
         return;
@@ -203,24 +203,24 @@ void Device::init()
     log_v("Device-Init Base-Topic '%s'", _topic);
     setState(DSTATE_INIT);
 
-    _client->publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
     for (auto const &node : _nodes)
     {
         node->init();
     }
 }
 
-void Device::registerSettableProperty(Property *property)
+void Device::registerSettableProperty(Property &property)
 {
     log_v("Added new callback to map for property %s (%s) with topic: '%s' and topicSet: '%s'",
-          property->getName(), property->getId(), property->getTopic(), property->getTopicSet());
+          property.getName(), property.getId(), property.getTopic(), property.getTopicSet());
 
-    _topicCallbacks[property->getTopicSet()] = property;
+    _topicCallbacks[property.getTopicSet()] = &property;
     vTaskDelay(pdMS_TO_TICKS(20));
 
-    if (property->isRetained())
+    if (property.isRetained())
     {
-        _topicCallbacks[property->getTopic()] = property;
+        _topicCallbacks[property.getTopic()] = &property;
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
@@ -257,12 +257,16 @@ void Device::restoreRetainedProperties()
     vTaskSuspend(_taskNewMqttMessages);
     //Wait for the msgs to come in!
     vTaskDelay(pdMS_TO_TICKS(2000));
-    std::map<Property *, PublishQueueElement *> receivedValues;
-    std::map<Property *, PublishQueueElement *> commandValues;
+    std::map<Property *, PublishQueueElement *> receivedValues; //from normal property topic
+    std::map<Property *, PublishQueueElement *> commandValues;  //from SET topic
+
+    unsigned long stamp = millis();
 
     log_i("---------------------------------------");
+    log_i("Restoring retained properties... STARTED");
     log_i("Working off received Messages, splitting them into REC_MAP and CMD_MAP");
     log_i("---------------------------------------");
+
     PublishQueueElement *elm;
     while (xQueueReceive(_newMqttMessageQueue, &elm, 0))
     {
@@ -329,7 +333,7 @@ void Device::restoreRetainedProperties()
 
         //Only delete the DATA channels from the subscription and topic callbacks, since we dont need them anymore!
         _topicCallbacks.erase(it->second->topic);
-        _client->unsubscribe(it->second->topic);
+        _client.unsubscribe(it->second->topic);
         if (p->isRetained())
         {
             p->setValue(elm->payload);
@@ -337,7 +341,7 @@ void Device::restoreRetainedProperties()
             PropertySetCallback callback = p->getCallback();
             if (callback != nullptr)
             {
-                callback(p);
+                callback(*p);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(40));
@@ -363,7 +367,7 @@ void Device::restoreRetainedProperties()
         PropertySetCallback callback = p->getCallback();
         if (callback != nullptr)
         {
-            callback(p);
+            callback(*p);
         }
         vTaskDelay(pdMS_TO_TICKS(40));
         delete elm;
@@ -390,7 +394,7 @@ void Device::restoreRetainedProperties()
 
                 log_v("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
                       p->getId(), p->getTopic(), topic);
-                _client->unsubscribe(p->getTopic());
+                _client.unsubscribe(p->getTopic());
 
                 if (p->isRetained())
                 {
@@ -399,7 +403,7 @@ void Device::restoreRetainedProperties()
                     PropertySetCallback callback = p->getCallback();
                     if (callback != nullptr)
                     {
-                        callback(p);
+                        callback(*p);
                     }
                 }
                 _topicCallbacks.erase(topic);
@@ -408,15 +412,17 @@ void Device::restoreRetainedProperties()
         }
         log_i("---------------------------------------");
         log_i("Defaults handling... DONE");
-        log_i("Setup... DONE");
         log_i("---------------------------------------");
         _setupDone = true;
         for (auto callback : _onDeviceSetupDoneCallbacks)
-            callback(this);
+            callback(*this);
     }
     vTaskDelay(pdMS_TO_TICKS(500));
     setState(DSTATE_READY);
-    _client->publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
+    _client.publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
+    log_i("---------------------------------------");
+    log_i("Restoring retained properties... DONE took %d ms", (millis() - stamp));
+    log_i("---------------------------------------");
 
     vTaskResume(_taskNewMqttMessages);
     vTaskResume(_taskStatsHandling);
@@ -466,11 +472,11 @@ void Device::startInitOrSetupTaskCode(void *parameter)
     log_i("---------------------------------------");
     log_i("StartOrInit Task running on Core %d name %s", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
     log_i("---------------------------------------");
-    if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
+    if (WiFi.status() != WL_CONNECTED || !crntDevice->_client.connected())
     {
         log_i("startInitOrSetupTask, wifi or device not connected: WiFi = %s Device = %s",
               WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
-              crntDevice->_client->connected() ? "CONNECTED" : "LOST");
+              crntDevice->_client.connected() ? "CONNECTED" : "LOST");
         vTaskDelete(nullptr);
     }
 
@@ -478,18 +484,23 @@ void Device::startInitOrSetupTaskCode(void *parameter)
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
+    log_i("---------------------------------------");
+    log_i("Device setup/init... STARTED");
+    log_i("---------------------------------------");
+    unsigned long stamp = millis();
+
     if (crntDevice->_setupDone)
     {
         crntDevice->init();
         log_i("---------------------------------------");
-        log_i("Device init... DONE");
+        log_i("Device init... DONE took %d ms", (millis() - stamp));
         log_i("---------------------------------------");
     }
     else
     {
         crntDevice->setup();
         log_i("---------------------------------------");
-        log_i("Device setup... DONE");
+        log_i("Device setup... DONE took %d ms", (millis() - stamp));
         log_i("---------------------------------------");
     }
     if (crntDevice->getState() == DSTATE_ALERT)
@@ -519,11 +530,11 @@ void Device::statsTaskCode(void *parameter)
             continue;
         }
 
-        if (WiFi.status() != WL_CONNECTED || !crntDevice->_client->connected())
+        if (WiFi.status() != WL_CONNECTED || !crntDevice->_client.connected())
         {
             log_i("statsTaskCode, wifi or device not connected: WiFi = %s Device = %s",
                   WiFi.status() == WL_CONNECTED ? "CONNECTED" : "LOST",
-                  crntDevice->_client->connected() ? "CONNECTED" : "LOST");
+                  crntDevice->_client.connected() ? "CONNECTED" : "LOST");
             vTaskSuspend(nullptr);
             continue;
         }
@@ -560,7 +571,7 @@ void Device::handleIncomingMqttTaskCode(void *parameter)
                 PropertySetCallback callback = p->getCallback();
                 if (callback != nullptr)
                 {
-                    callback(p);
+                    callback(*p);
                 }
             }
             delete elm;
@@ -576,7 +587,7 @@ void Device::timerCode(TimerHandle_t timer)
     if (WiFi.status() == WL_CONNECTED)
     {
         log_i("Connecting to MQTT...");
-        args->device->_client->connect();
+        args->device->_client.connect();
     }
     else
     {
@@ -599,7 +610,7 @@ void Device::onWiFiEventCallback(WiFiEvent_t event)
         log_i("Received IP Adress: %s", WiFi.localIP().toString().c_str());
         log_i("Wifi Ready!");
         _ip = WiFi.localIP();
-        _client->connect();
+        _client.connect();
         // xTimerStart(_mqttReconnectTimer, 0);
         break;
     }
@@ -612,11 +623,11 @@ void Device::onWiFiEventCallback(WiFiEvent_t event)
     }
 }
 
-Stats *Device::addStats(const char *id, GetStatsFunction fnc)
+Stats &Device::addStats(const char *id, GetStatsFunction fnc)
 {
-    Stats *s = new Stats(this, _client, id);
-    _stats.push_back(s);
-    s->setFunc(fnc);
+    Stats &s = *new Stats(*this, _client, id);
+    _stats.push_back(&s);
+    s.setFunc(fnc);
     if (_stats.size() == 1 && _state == DSTATE_READY)
     {
         vTaskResume(_taskStatsHandling);
