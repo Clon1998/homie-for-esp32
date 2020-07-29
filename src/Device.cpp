@@ -55,11 +55,22 @@ Device::Device(AsyncMqttClient &client, const char *id, uint8_t buffSize) : _cli
     log_i("Setting LW to: %s", _lwTopic);
     _client.setWill(_lwTopic, 1, true, "lost");
 
-    _client.onConnect(bind(&Device::onMqttConnectCallback, this, std::placeholders::_1));
-    _client.onDisconnect(bind(&Device::onMqttDisconnectCallback, this, std::placeholders::_1));
-    _client.onMessage(bind(&Device::onMessageReceivedCallback, this, std::placeholders::_1, std::placeholders::_2,
-                           std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
-    WiFi.onEvent(bind(&Device::onWiFiEventCallback, this, std::placeholders::_1));
+    _client.onConnect([this](bool sessionPresent) {
+        onMqttConnectCallback(sessionPresent);
+    });
+
+    _client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
+        onMqttDisconnectCallback(reason);
+    });
+
+    _client.onMessage([this](char *topicCharPtr, char *payloadCharPtr, AsyncMqttClientMessageProperties properties,
+                             size_t len, size_t index, size_t total) {
+        onMessageReceivedCallback(topicCharPtr, payloadCharPtr, properties, len, index, total);
+    });
+
+    WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) {
+        onWiFiEventCallback(event);
+    });
 
     _workingBuffer = new char[buffSize];
 
