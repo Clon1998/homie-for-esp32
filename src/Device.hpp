@@ -1,14 +1,15 @@
 #pragma once
 
-#include <map>
-#include <vector>
+#include <AsyncMqttClient.h>
 #include <IPAddress.h>
 #include <WString.h>
-#include <AsyncMqttClient.h>
 #include <WiFi.h>
+
 #include <HomieState.hpp>
 #include <Node.hpp>
 #include <Stats.hpp>
+#include <map>
+#include <vector>
 
 #define HOMIE_VER "3.0.1"
 #ifndef HOMIE_INCOMING_MSG_QUEUE
@@ -26,37 +27,31 @@
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
 typedef std::function<void(Device &device)> OnDeviceSetupDoneCallback;
 
-struct CmpStr
-{
-    bool operator()(char const *a, char const *b) const
-    {
+struct CmpStr {
+    bool operator()(char const *a, char const *b) const {
         //log_v("Comparing: a:'%s' b:'%s' result: %d", a, b, strcmp(a, b));
         return strcmp(a, b) < 0;
     }
 };
 
-struct PublishQueueElement
-{
+struct PublishQueueElement {
     const char *topic;
     const char *payload;
     AsyncMqttClientMessageProperties mqttProps;
 
-    ~PublishQueueElement()
-    {
+    ~PublishQueueElement() {
         // log_v("Destructor of PupQueElm");
         delete[] topic;
         delete[] payload;
     }
 };
 
-struct TimerArguments
-{
+struct TimerArguments {
     Device *device;
 };
 
-class Device
-{
-private:
+class Device {
+   private:
     HomieDeviceState _state = DSTATE_LOST;
     std::vector<Node *> _nodes;
     std::vector<Stats *> _stats;
@@ -108,17 +103,15 @@ private:
 
     void onWiFiEventCallback(WiFiEvent_t event);
 
-public:
+   public:
     Device(AsyncMqttClient &client, const char *id, uint8_t buffSize = 128);
 
     ~Device() {
-        for (auto &&node : _nodes)
-        {
+        for (auto &&node : _nodes) {
             delete node;
         }
-        
-        for (auto &&stat : _stats)
-        {
+
+        for (auto &&stat : _stats) {
             delete stat;
         }
     }
@@ -204,8 +197,7 @@ public:
      * 
      * @return HomieDeviceState 
      */
-    HomieDeviceState getState()
-    {
+    HomieDeviceState getState() {
         return this->_state;
     }
 
@@ -214,8 +206,7 @@ public:
      * 
      * @param state 
      */
-    void setState(HomieDeviceState state)
-    {
+    void setState(HomieDeviceState state) {
         this->_state = state;
         for (auto callback : _onDeviceStateChangedCallbacks)
             callback(state);
@@ -226,8 +217,7 @@ public:
      * 
      * @param name 
      */
-    void setName(const char *name)
-    {
+    void setName(const char *name) {
         if (_name)
             delete[] _name;
 
@@ -241,8 +231,7 @@ public:
      * 
      * @return const char* 
      */
-    const char *getTopic()
-    {
+    const char *getTopic() {
         return this->_topic;
     }
 
@@ -251,8 +240,7 @@ public:
      * 
      * @return char* 
      */
-    char *getWorkingBuffer()
-    {
+    char *getWorkingBuffer() {
         return this->_workingBuffer;
     }
 
@@ -261,8 +249,7 @@ public:
      * 
      * @return unsigned long 
      */
-    unsigned long getConnectionTimeStamp()
-    {
+    unsigned long getConnectionTimeStamp() {
         return this->_connectionTimeStamp;
     }
 
@@ -272,8 +259,7 @@ public:
      * @return true if setup is done
      * @return false if setup isnt done
      */
-    bool isSetupDone()
-    {
+    bool isSetupDone() {
         return this->_setupDone;
     }
 
@@ -282,8 +268,7 @@ public:
      * 
      * @param interval 
      */
-    void setStatsInterval(int interval)
-    {
+    void setStatsInterval(int interval) {
         this->_statsInterval = interval;
     }
 
@@ -292,8 +277,7 @@ public:
      * 
      * @return int 
      */
-    int getStatsInterval()
-    {
+    int getStatsInterval() {
         return this->_statsInterval;
     }
 };
