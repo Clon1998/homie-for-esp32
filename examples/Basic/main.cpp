@@ -44,9 +44,11 @@ void onDeviceStateChangedCallback(HomieDeviceState state)
   log_i("Device State Changed: %d", state);
 }
 
-void onColorChanged(Property *property)
+void onColorChanged(Property *property, const char *payload)
 {
-  log_i("HomierProperty Value HSV: %s", property->getValue());
+  log_i("HomierProperty old Value HSV: %s", property->getValue());
+  log_i("HomierProperty new Value HSV: %s", payload);
+  property->setValue(payload);
 }
 
 void getFreeHeap(Stats *stat)

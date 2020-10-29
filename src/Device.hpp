@@ -26,6 +26,8 @@
 typedef std::function<void(HomieDeviceState state)> OnDeviceStateChangedCallback;
 typedef std::function<void(Device &device)> OnDeviceSetupDoneCallback;
 
+const char *stateEnumToString(HomieDeviceState e);
+
 struct CmpStr
 {
     bool operator()(char const *a, char const *b) const
@@ -116,15 +118,24 @@ public:
         {
             delete node;
         }
-        
+
         for (auto &&stat : _stats)
         {
             delete stat;
         }
     }
+
+    /**
+     * @brief Adds the Node to the device
+     *
+     * @param &node will be pushed into the list of nodes
+     * @return Node* a ptr to the added Node
+     */
+    Node &addNode(Node &newNode);
+
     /**
      * @brief Allocates and adds a new Node to the device
-     * 
+     *
      * @param id will be assigned to the node
      * @return Node* a ptr to the created Node
      */
@@ -132,7 +143,7 @@ public:
 
     /**
      * @brief Allocates and adds new Node to the Device with more Node Parameters
-     * 
+     *
      * @param id will be assigned to the node
      * @param name will be the name of the new Node
      * @param type will be the Type of the new Node
@@ -142,7 +153,7 @@ public:
 
     /**
      * @brief Allocates and adds a new Stats Object to the device.
-     * 
+     *
      * @param id will be the id of the Stat
      * @param fnc a function that supplies the Stats Object with values to publish.
      * @return Stats* a ptr to the created Stats Object
@@ -151,7 +162,7 @@ public:
 
     /**
      * @brief Sets up the Device
-     * The Setup will only be called once. 
+     * The Setup will only be called once.
      * Physical Device Starts/Reboots -> MQTT Connection established -> Setup()
      */
     void setup();
@@ -165,44 +176,44 @@ public:
     /**
      * @brief Registers a settable Property.
      * Basically makes sure thath incomming MQTT Msgs can be mapped to the correct Propety.
-     * @param property 
+     * @param property
      */
     void registerSettableProperty(Property &property);
 
     /**
      * @brief Adds a new OnDeviceStatChangedCallback to the Callback.
      * These callbacks will be called when ever the device state changes.
-     * 
-     * @param callback 
+     *
+     * @param callback
      */
     void onDeviceStateChanged(OnDeviceStateChangedCallback callback);
 
     /**
      * @brief Adds a new OnDeviceSetupDoneCallback to the Callback.
-     * These callbacks will be called once after the device published 
+     * These callbacks will be called once after the device published
      * the defaults and the device setup is done.
-     * 
-     * @param callback 
+     *
+     * @param callback
      */
     void onDeviceSetupDoneCallback(OnDeviceSetupDoneCallback callback);
 
     /**
      * @brief extends a "topic" with the baseTopic of this Device
-     * Example: 
+     * Example:
      * BaseTopic = "homie/lamp-v2-dev/"
      * d = "$stats/interval"
      * returns -> "homie/lamp-v2-dev/$stats/interval"
-     * 
+     *
      * @param buff The char* buffer to work on
      * @param d * the extension String.
-     * @return char* 
+     * @return char*
      */
     char *prefixedTopic(char *buff, const char *d);
 
     /**
      * @brief Get the State object
-     * 
-     * @return HomieDeviceState 
+     *
+     * @return HomieDeviceState
      */
     HomieDeviceState getState()
     {
@@ -211,8 +222,8 @@ public:
 
     /**
      * @brief Set the State object
-     * 
-     * @param state 
+     *
+     * @param state
      */
     void setState(HomieDeviceState state)
     {
@@ -223,8 +234,8 @@ public:
 
     /**
      * @brief Set the Device Name
-     * 
-     * @param name 
+     *
+     * @param name
      */
     void setName(const char *name)
     {
@@ -238,8 +249,8 @@ public:
 
     /**
      * @brief Get the Topic object
-     * 
-     * @return const char* 
+     *
+     * @return const char*
      */
     const char *getTopic()
     {
@@ -248,8 +259,8 @@ public:
 
     /**
      * @brief Get the Working Buffer object
-     * 
-     * @return char* 
+     *
+     * @return char*
      */
     char *getWorkingBuffer()
     {
@@ -258,8 +269,8 @@ public:
 
     /**
      * @brief Get the Connection Time Stamp object
-     * 
-     * @return unsigned long 
+     *
+     * @return unsigned long
      */
     unsigned long getConnectionTimeStamp()
     {
@@ -268,9 +279,9 @@ public:
 
     /**
      * @brief IsSetupDone
-     * 
+     *
      * @return true if setup is done
-     * @return false if setup isnt done
+     * @return false if setup isn't done
      */
     bool isSetupDone()
     {
@@ -279,8 +290,8 @@ public:
 
     /**
      * @brief Set the Stats Interval
-     * 
-     * @param interval 
+     *
+     * @param interval
      */
     void setStatsInterval(int interval)
     {
@@ -289,8 +300,8 @@ public:
 
     /**
      * @brief Get the Stats Interval
-     * 
-     * @return int 
+     *
+     * @return int
      */
     int getStatsInterval()
     {

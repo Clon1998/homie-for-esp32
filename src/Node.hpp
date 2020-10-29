@@ -2,7 +2,6 @@
 
 #include <string.h>
 #include <vector>
-// #include <MQTT.h>
 #include <AsyncMqttClient.h>
 #include <Property.hpp>
 class Device;
@@ -35,23 +34,31 @@ public:
     void init();
 
     /**
-     * @brief This method creates a new Property with the given 
-     * name,id,dataType, adds it to the node and returns the property.
-     * 
-     * @param id 
-     * @param name 
-     * @param dataType 
+     * @brief This method creates a new Property with the given
+     * name, id, dataType, adds it to the node and returns the property.
+     *
+     * @param id
+     * @param name
+     * @param dataType
      * @return Property* the newly created and added property
      */
     Property &addProperty(const char *id, const char *name, HomieDataType dataType);
 
     /**
      * @brief This method adds a Property to the node.
-     * 
+     *
      * @param property the Property to add
      * @return Property* the Property added
      */
     Property &addProperty(Property &property);
+
+    /**
+     * @brief This returns the property with the given ID.
+     *
+     * @param id the Property id to look for
+     * @return Property* the Property found, nullptr if not found
+     */
+    Property *findPropertyByID(const char *id);
 
     Device &getParent()
     {

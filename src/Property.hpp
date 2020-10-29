@@ -8,7 +8,7 @@
 class Node;
 class Property;
 
-typedef std::function<void(Property &property)> PropertySetCallback;
+typedef std::function<void(Property &property, const char *payload)> PropertySetCallback;
 
 class Property
 {
@@ -30,14 +30,15 @@ private:
     size_t _valueSize;
 
     AsyncMqttClient &_client;
-    
+
     char *prefixedPropertyTopic(char *buff, const char *d);
+    void publishPrefixedTopics(void);
 
     /**
      * @brief checks if the value matches the format
      * return true if the value is correct!
      * Does not check for null/empty value!!!
-     * @param value 
+     * @param value
      * @return true value matches the Format
      * @return false value does not match the Format
      */
@@ -140,8 +141,8 @@ public:
      * if updateToMqtt is set to TRUE it will publish to the SET channel,
      * the device will receive that MQTT publish and kicks off the callback.
      * Note that the value will be copied into the value buffer of the Property object.
-     * 
-     * @param value 
+     *
+     * @param value
      * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
      */
     void setValue(const char *value, bool updateToMqtt = false);
@@ -151,8 +152,8 @@ public:
      * if updateToMqtt is set to TRUE it will publish to the SET channel,
      * the device will receive that MQTT publish and kicks off the callback.
      * Note that the value will be copied into the value buffer of the Property object.
-     * 
-     * @param value 
+     *
+     * @param value
      * @param updateToMqtt false= Normal-Channel, true= Set-Channel e.g. homie/foo/bar/set
      */
     void setValue(String value, bool updateToMqtt = false);

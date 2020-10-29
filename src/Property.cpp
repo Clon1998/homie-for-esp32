@@ -72,7 +72,7 @@ Property::Property(Node &src, AsyncMqttClient &client, const char *id, const cha
     _id = idBuff;
 
     char *nameBuff = new char[strlen(name) + 1];
-    strcpy(nameBuff, id);
+    strcpy(nameBuff, name);
     _name = nameBuff;
 
     switch (_dataType)
@@ -110,8 +110,26 @@ char *Property::prefixedPropertyTopic(char *buff, const char *d)
     return buff;
 }
 
+void Property::publishPrefixedTopics()
+{
+    Device &device = _parent.getParent();
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$name"), 1, true, _name);
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$datatype"), 1, true, dateTypeEnumToString(_dataType));
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$settable"), 1, true, boolToString(_settable));
+    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$retained"), 1, true, boolToString(_retained));
+
+    if (_unit)
+        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$unit"), 1, true, _unit);
+
+    if (_format)
+        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$format"), 1, true, _format);
+}
+
 bool Property::setup()
 {
+    log_v("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    log_v("In Property::setup() for property %s (id: %s)\n", _name, _id);
+
     if (!_name || !_id || _dataType == HOMIE_UNDEFINED)
     {
         log_e("Property Name, Dataype or ID isnt set! Name: '%s' DataType: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _dataType ? _dataType : HOMIE_UNDEFINED,
@@ -137,17 +155,7 @@ bool Property::setup()
     strcat(topicSet, "/set");
     _topicSet = topicSet;
 
-    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$name"), 1, true, _name);
-    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$datatype"), 1, true, dateTypeEnumToString(_dataType));
-    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$settable"), 1, true, boolToString(_settable));
-    _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$retained"), 1, true, boolToString(_retained));
-
-    if (_unit)
-        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$unit"), 1, true, _unit);
-
-    if (_format)
-        _client.publish(prefixedPropertyTopic(device.getWorkingBuffer(), "/$format"), 1, true, _format);
-
+    publishPrefixedTopics();
     init();
     return true;
 }
@@ -196,14 +204,14 @@ void Property::setValue(const char *value, bool updateToMqtt)
     }
     strcpy(_value, value);
 
-    log_v("Property %s(%s) topic->'%s' payload->'%s:::%p' bufferValue->'%s:::%p' ", _name, _id, _topic, value, &value, _value, &_value);
-    if (!_retained)
-        return;
+    log_i("Property %s(%s) topic->'%s' payload->'%s:::%p' bufferValue->'%s:::%p' ", _name, _id, _topic, value, &value, _value, &_value);
 
     if (updateToMqtt)
         _client.publish(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1, true, _value);
     else
         _client.publish(_topic, 1, true, _value);
+
+    publishPrefixedTopics();
 }
 
 void Property::setValue(String value, bool updateToMqtt)
@@ -226,8 +234,11 @@ bool Property::validateValue(const char *value)
     switch (_dataType)
     {
     case HOMIE_BOOL:
-        if (strcmp(_value, "true") != 0 && strcmp(_value, "false") != 0)
+        if (strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
+        {
+            log_e("_%s_ is not a boolean", value);
             return false;
+        }
         break;
     case HOMIE_COLOR:
         if (!_format)

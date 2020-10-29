@@ -107,6 +107,14 @@ Device::Device(AsyncMqttClient &client, const char *id, uint8_t buffSize) : _cli
         CONFIG_HOMIE_STATS_RUNNING_CORE);
 }
 
+Node &Device::addNode(Node &newNode)
+{
+    log_i("add given Node: %s", newNode.getId());
+    this->_nodes.push_back(&newNode);
+
+    return newNode;
+}
+
 Node &Device::addNode(const char *id)
 {
     Node &n = *new Node(*this, _client, id);
@@ -149,20 +157,6 @@ void Device::setup()
     _client.publish(prefixedTopic(_workingBuffer, "$extensions"), 1, true, _extensions);
     _client.publish(prefixedTopic(_workingBuffer, "$mac"), 1, true, _mac);
     _client.publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
-    _client.publish(prefixedTopic(_workingBuffer, "$stats/interval"), 1, true, String(_statsInterval).c_str());
-
-    String statIds((char *)0);
-    // We only assume that every Stat is of max length 12, in my case it is!
-    statIds.reserve(_stats.size() * 13);
-
-    for (auto const &stat : _stats)
-    {
-        statIds.concat(stat->getId());
-        statIds.concat(",");
-    }
-    if (_stats.size() > 0)
-        statIds.remove(statIds.length() - 1);
-    _client.publish(prefixedTopic(_workingBuffer, "$stats"), 1, true, statIds.c_str());
 
     String nodeNames((char *)0);
     // We only assume thath every node name max len is 12, in my case it is!
@@ -176,6 +170,20 @@ void Device::setup()
         nodeNames.remove(nodeNames.length() - 1);
 
     _client.publish(prefixedTopic(_workingBuffer, "$nodes"), 1, true, nodeNames.c_str());
+
+    String statIds((char *)0);
+    // We only assume that every Stat is of max length 12, in my case it is!
+    statIds.reserve(_stats.size() * 13);
+
+    for (auto const &stat : _stats)
+    {
+        statIds.concat(stat->getId());
+        statIds.concat(",");
+    }
+    if (_stats.size() > 0)
+        statIds.remove(statIds.length() - 1);
+    _client.publish(prefixedTopic(_workingBuffer, "$stats"), 1, true, statIds.c_str());
+    _client.publish(prefixedTopic(_workingBuffer, "$stats/interval"), 1, true, String(_statsInterval).c_str());
 
     for (auto const &node : _nodes)
     {
@@ -236,7 +244,8 @@ void Device::registerSettableProperty(Property &property)
     }
 }
 //
-void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr, AsyncMqttClientMessageProperties properties,
+void Device::onMessageReceivedCallback(char *topicCharPtr, char *payloadCharPtr,
+                                       AsyncMqttClientMessageProperties properties,
                                        size_t len, size_t index, size_t total)
 {
     if (len == 0)
@@ -352,7 +361,7 @@ void Device::restoreRetainedProperties()
             PropertySetCallback callback = p->getCallback();
             if (callback != nullptr)
             {
-                callback(*p);
+                callback(*p, elm->payload);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(40));
@@ -378,7 +387,7 @@ void Device::restoreRetainedProperties()
         PropertySetCallback callback = p->getCallback();
         if (callback != nullptr)
         {
-            callback(*p);
+            callback(*p, elm->payload);
         }
         vTaskDelay(pdMS_TO_TICKS(40));
         delete elm;
@@ -414,7 +423,7 @@ void Device::restoreRetainedProperties()
                     PropertySetCallback callback = p->getCallback();
                     if (callback != nullptr)
                     {
-                        callback(*p);
+                        callback(*p, p->getValue());
                     }
                 }
                 _topicCallbacks.erase(topic);
@@ -577,12 +586,10 @@ void Device::handleIncomingMqttTaskCode(void *parameter)
                 log_v("Found a matching callback for topic '%s' property: %s(%s)", tPtr,
                       p->getName(), p->getId());
 
-                p->setValue(elm->payload);
-
                 PropertySetCallback callback = p->getCallback();
                 if (callback != nullptr)
                 {
-                    callback(*p);
+                    callback(*p, elm->payload);
                 }
             }
             delete elm;
@@ -602,7 +609,7 @@ void Device::timerCode(TimerHandle_t timer)
     }
     else
     {
-        log_i("Stopping Timer since WiFi isnt Connected");
+        log_i("Stopping Timer since WiFi isn't Connected");
         xTimerStop(timer, 0);
     }
 }

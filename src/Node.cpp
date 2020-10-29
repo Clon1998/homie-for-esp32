@@ -22,6 +22,25 @@ Property &Node::addProperty(Property &property)
     return property;
 }
 
+Property *Node::findPropertyByID(const char *id)
+{
+    if (_properties.size() <= 0)
+    {
+        log_i("No properties defined.");
+        return nullptr;
+    }
+    Property *ret = nullptr;
+    for (auto const &prop : _properties)
+    {
+        if (strcmp(prop->getId(), id) == 0)
+        {
+            log_i("Property %s (id: %s) found.", prop->getName(), prop->getId());
+            ret = prop;
+        }
+    }
+    return ret;
+}
+
 char *Node::prefixedNodeTopic(char *buff, const char *d)
 {
     strcpy(buff, _id);
@@ -34,10 +53,12 @@ char *Node::prefixedNodeTopic(char *buff, const char *d)
 
 bool Node::setup()
 {
+    log_v("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    log_v("In Node::setup() for node %s (id: %s)", _name, _id);
 
     if (!_name || !_type || !_id)
     {
-        log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _type ? _type : "UNDEFINED", _id ? _id : "UNDEFINED");
+        log_e("Node Name, Type or ID isn't set! Name: '%s' Type: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _type ? _type : "UNDEFINED", _id ? _id : "UNDEFINED");
         return false;
     }
 
@@ -57,6 +78,7 @@ bool Node::setup()
         propNames.concat(prop->getId());
         propNames.concat(",");
     }
+    log_v("Num properties %d found", _properties.size());
     if (_properties.size() > 0)
         propNames.remove(propNames.length() - 1);
 
@@ -72,12 +94,15 @@ bool Node::setup()
             return false;
         }
     }
+    log_v("+-+-+-+-+-+-+-+-+-+-+-+-+-+");
     return true;
 }
 
 void Node::init()
 {
-    log_v("Init for node %s (%s)", _name, _id);
+    log_v("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+    log_v("In Node::init() for node %s (id: %s)", _name, _id);
+    log_v("+-+-+-+-+-+-+-+-+-+-+-+-+-+");
 
     for (auto const &prop : _properties)
     {

@@ -13,6 +13,11 @@
         "name": "Patrick Schmidt",
         "email": "patrick.schmidt.25@stud.tu-darmstadt.de",
         "maintainer": true
+      },
+      {
+        "name": "Mischa Soujon",
+        "email": "mischa.soujon@ibm.com",
+        "maintainer": false
       }
     ],
     "dependencies": [
@@ -21,7 +26,7 @@
           "version": "^0.8.2"
         }
     ],
-    "version": "0.10.0",
+    "version": "0.10.1",
     "frameworks": "arduino",
     "platforms": "espressif32"
 }
