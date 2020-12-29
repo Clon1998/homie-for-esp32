@@ -1,29 +1,25 @@
-#include <Node.hpp>
 #include <Device.hpp>
+#include <Node.hpp>
 
 Node::Node(Device &src, AsyncMqttClient &client, const char *id) : _parent(src),
                                                                    _name(nullptr),
                                                                    _type(nullptr),
-                                                                   _client(client)
-{
+                                                                   _client(client) {
     char *idBuff = new char[strlen(id) + 1];
     strcpy(idBuff, id);
     _id = idBuff;
 }
 
-Property &Node::addProperty(const char *id, const char *name, HomieDataType dataType)
-{
+Property &Node::addProperty(const char *id, const char *name, HomieDataType dataType) {
     return addProperty(*new Property(*this, _client, id, name, dataType));
 }
 
-Property &Node::addProperty(Property &property)
-{
+Property &Node::addProperty(Property &property) {
     this->_properties.push_back(&property);
     return property;
 }
 
-char *Node::prefixedNodeTopic(char *buff, const char *d)
-{
+char *Node::prefixedNodeTopic(char *buff, const char *d) {
     strcpy(buff, _id);
     strcat(buff, "/");
     strcat(buff, d);
@@ -32,11 +28,8 @@ char *Node::prefixedNodeTopic(char *buff, const char *d)
     return buff;
 }
 
-bool Node::setup()
-{
-
-    if (!_name || !_type || !_id)
-    {
+bool Node::setup() {
+    if (!_name || !_type || !_id) {
         log_e("Node Name, Type or ID isnt set! Name: '%s' Type: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _type ? _type : "UNDEFINED", _id ? _id : "UNDEFINED");
         return false;
     }
@@ -52,8 +45,7 @@ bool Node::setup()
     String propNames((char *)0);
     // we only assume the max prop name len is 19, in my case it is!
     propNames.reserve(_properties.size() * 20);
-    for (auto const &prop : _properties)
-    {
+    for (auto const &prop : _properties) {
         propNames.concat(prop->getId());
         propNames.concat(",");
     }
@@ -64,10 +56,8 @@ bool Node::setup()
 
     _client.publish(_parent.prefixedTopic(_parent.getWorkingBuffer(), prefixedNodeTopic(nodeTopic.get(), "$properties")), 1, true, propNames.c_str());
 
-    for (auto const &prop : _properties)
-    {
-        if (!prop->setup())
-        {
+    for (auto const &prop : _properties) {
+        if (!prop->setup()) {
             log_e("Error while setting up property: ", prop->getName() ? prop->getName() : "UNDEFINED", prop->getId() ? prop->getId() : "UNDEFINED");
             return false;
         }
@@ -75,12 +65,10 @@ bool Node::setup()
     return true;
 }
 
-void Node::init()
-{
+void Node::init() {
     log_v("Init for node %s (%s)", _name, _id);
 
-    for (auto const &prop : _properties)
-    {
+    for (auto const &prop : _properties) {
         prop->init();
     }
 }

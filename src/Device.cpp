@@ -286,7 +286,7 @@ void Device::restoreRetainedProperties() {
     log_i("Working off values in REC_MAP, or use value in CMD_MAP if present.");
     log_i("REC_MAP-CNT: %d", receivedValues.size());
     log_i("---------------------------------------");
-    auto tmpRec = receivedValues;//Create a copy to be used!!!
+    auto tmpRec = receivedValues;  //Create a copy to be used!!!
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpRec.begin(); it != tmpRec.end(); it++) {
         Property *p = it->first;
         bool comesFromCommand = false;
@@ -308,11 +308,12 @@ void Device::restoreRetainedProperties() {
         _topicCallbacks.erase(it->second->topic);
         _client.unsubscribe(it->second->topic);
         if (p->isRetained()) {
-            p->setValue(elm->payload);
-
             PropertySetCallback callback = p->getCallback();
-            if (callback != nullptr) {
-                callback(*p);
+            if (callback == nullptr) {
+                p->setValue(elm->payload);
+            } else {
+                String v = callback(*p, elm->payload);
+                p->setValue(v);
             }
         }
         vTaskDelay(pdMS_TO_TICKS(40));
@@ -326,20 +327,22 @@ void Device::restoreRetainedProperties() {
     auto tmpCommand = commandValues;
     log_i("---------------------------------------");
     log_i("Working off left overs in CMD_MAP!");
-        log_i("CMD_MAP-CNT: %d", commandValues.size());
+    log_i("CMD_MAP-CNT: %d", commandValues.size());
     log_i("---------------------------------------");
     for (std::map<Property *, PublishQueueElement *>::iterator it = tmpCommand.begin(); it != tmpCommand.end(); it++) {
         Property *p = it->first;
         log_i("LeftOver: Property %s with Topic %s.", p->getName(), p->getTopic());
         elm = it->second;
-    
+
         _topicCallbacks.erase(p->getTopic());
         _client.unsubscribe(p->getTopic());
 
-        p->setValue(elm->payload);
         PropertySetCallback callback = p->getCallback();
-        if (callback != nullptr) {
-            callback(*p);
+        if (callback == nullptr) {
+            p->setValue(elm->payload);
+        } else {
+            String v = callback(*p, elm->payload);
+            p->setValue(v);
         }
         vTaskDelay(pdMS_TO_TICKS(40));
         delete elm;
@@ -360,16 +363,24 @@ void Device::restoreRetainedProperties() {
                     continue;
                 }
 
-                log_v("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
+                log_i("Didnt receive a default for %s(%s) with topic: %s onTopic: %s", p->getName(),
                       p->getId(), p->getTopic(), topic);
                 _client.unsubscribe(p->getTopic());
 
                 if (p->isRetained()) {
-                    p->setValue(p->getValue());
-
                     PropertySetCallback callback = p->getCallback();
-                    if (callback != nullptr) {
-                        callback(*p);
+
+                    const char *providedVal = p->getValue();
+
+                    if (!p->validateValue(providedVal)) {
+                        providedVal = defaultForDataType(p->getDataType());
+                    }
+
+                    if (callback == nullptr) {
+                        p->setValue(providedVal);
+                    } else {
+                        String v = callback(*p, providedVal);
+                        p->setValue(v);
                     }
                 }
                 _topicCallbacks.erase(topic);
@@ -513,11 +524,12 @@ void Device::handleIncomingMqttTaskCode(void *parameter) {
                 log_v("Found a matching callback for topic '%s' property: %s(%s)", tPtr,
                       p->getName(), p->getId());
 
-                p->setValue(elm->payload);
-
                 PropertySetCallback callback = p->getCallback();
-                if (callback != nullptr) {
-                    callback(*p);
+                if (callback == nullptr) {
+                    p->setValue(elm->payload);
+                } else {
+                    String v = callback(*p, elm->payload);
+                    p->setValue(v);
                 }
             }
             delete elm;

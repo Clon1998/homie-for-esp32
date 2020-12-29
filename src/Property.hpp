@@ -3,16 +3,19 @@
 #include <string.h>
 // #include <MQTT.h>
 #include <AsyncMqttClient.h>
+
 #include <HomieDatatype.hpp>
 
 class Node;
 class Property;
 
-typedef std::function<void(Property &property)> PropertySetCallback;
+// The callback function receives the received MQTT payload, if it wishes to modify the property e.g. custom format return sth. or just the payload again if nothing changed!
+typedef std::function<String(Property &property, const char *payload)> PropertySetCallback;
 
-class Property
-{
-private:
+const char *defaultForDataType(HomieDataType type);
+
+class Property {
+   private:
     Node &_parent;
     const char *_topic;
     const char *_topicSet;
@@ -30,68 +33,59 @@ private:
     size_t _valueSize;
 
     AsyncMqttClient &_client;
-    
+
     char *prefixedPropertyTopic(char *buff, const char *d);
 
-    /**
-     * @brief checks if the value matches the format
-     * return true if the value is correct!
-     * Does not check for null/empty value!!!
-     * @param value 
-     * @return true value matches the Format
-     * @return false value does not match the Format
-     */
-    bool validateValue(const char *value);
-
-public:
+   public:
     Property(Node &src, AsyncMqttClient &client, const char *id, const char *name, HomieDataType dataType);
     ~Property() {}
 
     bool setup();
     void init();
 
-    const char *getName()
-    {
+    /**
+     * @brief checks if the value matches the format
+     * return true if the value is correct!
+     * Does CHECK for null/empty value!!!
+     * @param value 
+     * @return true value matches the Format
+     * @return false value does not match the Format
+     */
+    bool validateValue(const char *value);
+
+    const char *getName() {
         return this->_name;
     }
 
-    const char *getId()
-    {
+    const char *getId() {
         return this->_id;
     }
 
-    HomieDataType getDataType()
-    {
+    HomieDataType getDataType() {
         return this->_dataType;
     }
 
-    bool isSettable()
-    {
+    bool isSettable() {
         return this->_settable;
     }
 
-    void setSettable(bool settable)
-    {
+    void setSettable(bool settable) {
         this->_settable = settable;
     }
 
-    bool isRetained()
-    {
+    bool isRetained() {
         return this->_retained;
     }
 
-    void setRetained(bool retained)
-    {
+    void setRetained(bool retained) {
         this->_retained = retained;
     }
 
-    const char *getUnit()
-    {
+    const char *getUnit() {
         return this->_unit;
     }
 
-    void setUnit(const char *unit)
-    {
+    void setUnit(const char *unit) {
         if (_unit)
             delete[] _unit;
 
@@ -100,13 +94,11 @@ public:
         _unit = _unitbuff;
     }
 
-    const char *getFormat()
-    {
+    const char *getFormat() {
         return this->_format;
     }
 
-    void setFormat(const char *format)
-    {
+    void setFormat(const char *format) {
         if (_format)
             delete[] _format;
 
@@ -115,13 +107,11 @@ public:
         _format = _formatbuff;
     }
 
-    const char *getTopic()
-    {
+    const char *getTopic() {
         return this->_topic;
     }
 
-    const char *getTopicSet()
-    {
+    const char *getTopicSet() {
         return this->_topicSet;
     }
 
@@ -131,8 +121,7 @@ public:
 
     bool getValueAsBool();
 
-    const char *getValue()
-    {
+    const char *getValue() {
         return this->_value;
     }
     /**
@@ -165,13 +154,11 @@ public:
 
     void setDefaultValue(String value);
 
-    void setCallback(PropertySetCallback callback)
-    {
+    void setCallback(PropertySetCallback callback) {
         this->_callback = callback;
     }
 
-    PropertySetCallback getCallback()
-    {
+    PropertySetCallback getCallback() {
         return _callback;
     }
 };

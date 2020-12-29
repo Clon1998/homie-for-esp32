@@ -1,15 +1,16 @@
 #pragma once
 
 #include <string.h>
+
 #include <vector>
 // #include <MQTT.h>
 #include <AsyncMqttClient.h>
+
 #include <Property.hpp>
 class Device;
 
-class Node
-{
-private:
+class Node {
+   private:
     Device &_parent;
 
     const char *_name;
@@ -20,12 +21,10 @@ private:
 
     char *prefixedNodeTopic(char *buff, const char *d);
 
-public:
+   public:
     Node(Device &src, AsyncMqttClient &client, const char *id);
-    ~Node()
-    {
-        for (auto &&prop : _properties)
-        {
+    ~Node() {
+        for (auto &&prop : _properties) {
             delete prop;
         }
     };
@@ -53,18 +52,15 @@ public:
      */
     Property &addProperty(Property &property);
 
-    Device &getParent()
-    {
+    Device &getParent() {
         return this->_parent;
     }
 
-    const char *getName()
-    {
+    const char *getName() {
         return this->_name;
     }
 
-    void setName(const char *name)
-    {
+    void setName(const char *name) {
         if (_name)
             delete[] _name;
 
@@ -73,18 +69,15 @@ public:
         _name = _namebuff;
     }
 
-    const char *getId()
-    {
+    const char *getId() {
         return this->_id;
     }
 
-    const char *getType()
-    {
+    const char *getType() {
         return this->_type;
     }
 
-    void setType(const char *type)
-    {
+    void setType(const char *type) {
         if (_type)
             delete[] _type;
 
