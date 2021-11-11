@@ -27,14 +27,16 @@ class Property {
     bool _retained = true;
     const char *_unit;
     const char *_format;
+    const char **_format_arr = nullptr;
     PropertySetCallback _callback;
 
-    char *_value;
+    char *_value = nullptr;
     size_t _valueSize;
 
     AsyncMqttClient &_client;
 
     char *prefixedPropertyTopic(char *buff, const char *d);
+    void setupEnumNode();
 
    public:
     Property(Node &src, AsyncMqttClient &client, const char *id, const char *name, HomieDataType dataType);

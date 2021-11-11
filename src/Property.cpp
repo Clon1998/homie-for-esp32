@@ -80,7 +80,7 @@ Property::Property(Node &src, AsyncMqttClient &client, const char *id, const cha
             _valueSize = 12;
             break;
         case HOMIE_ENUM:
-            _valueSize = 4;
+            _valueSize = 16;  // Enums can now have max len of 15 chars!
             break;
         case HOMIE_UNDEFINED:
         case HOMIE_FLOAT:
@@ -101,11 +101,43 @@ char *Property::prefixedPropertyTopic(char *buff, const char *d) {
     return buff;
 }
 
+void Property::setupEnumNode() {
+    int size = 0;
+    const char del = ',';
+    for (const char *i = _format; *i; i++) {
+        if (*i == del)
+            size++;
+    }
+    if (size > 0)
+        size++;  // Since delimeter is always once less
+
+    log_i("Property %s (%s) Enum %s %d", _name, _id, _format, size);
+    if (_format_arr)
+        delete[] _format_arr;
+
+    _format_arr = new const char *[size];
+
+    char *pch;
+    char *copy = strdup(_format);
+    pch = strtok(copy, ",");
+    int j = 0;
+    while (pch != NULL) {
+        char *tmp = new char[strlen(pch) + 1];
+        strcpy(tmp, pch);
+        _format_arr[j++] = tmp;
+        pch = strtok(NULL, ",");
+    }
+    free(copy);
+}
+
 bool Property::setup() {
     if (!_name || !_id || _dataType == HOMIE_UNDEFINED) {
         log_e("Property Name, Dataype or ID isnt set! Name: '%s' DataType: '%s' ID: '%s'", _name ? _name : "UNDEFINED", _dataType ? _dataType : HOMIE_UNDEFINED,
               _id ? _id : "UNDEFINED");
         return false;
+    }
+    if (_dataType == HOMIE_ENUM) {
+        setupEnumNode();
     }
 
     log_v("Starting setup for Property %s (%s)", _name, _id);
@@ -155,7 +187,10 @@ void Property::init() {
 
 void Property::setValue(const char *value, bool updateToMqtt) {
     if (!validateValue(value)) {
-        value = defaultForDataType(_dataType);
+        if (_dataType == HOMIE_ENUM) {
+            value = _format_arr[0];
+        } else
+            value = defaultForDataType(_dataType);
     }
 
     // This is a correction incase the RGB values where send as floats -- OpenHab specific IMPL/fix
@@ -168,7 +203,8 @@ void Property::setValue(const char *value, bool updateToMqtt) {
 
     if (strlen(value) > (_valueSize - 1)) {
         log_e("value '%s' length was bigger than buffer! Allocating bigger Buffer! old:new -> '%i':'%i'", value, _valueSize, strlen(value) + 1);
-        delete[] _value;
+        if (_value)
+            delete[] _value;
         _valueSize = strlen(value) + 1;
         _value = new char[_valueSize];
     }
