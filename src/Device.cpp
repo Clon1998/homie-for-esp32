@@ -51,7 +51,7 @@ Device::Device(AsyncMqttClient &client, const char *id, uint8_t buffSize) : _cli
     _homieVersion = versionBuff;
 
     log_i("Setting LW to: %s", _lwTopic);
-    _client.setWill(_lwTopic, 1, true, "lost");
+    _client.setWill(_lwTopic, 2, true, "lost");
 
     _client.onConnect([this](bool sessionPresent) {
         onMqttConnectCallback(sessionPresent);
@@ -291,6 +291,7 @@ void Device::restoreRetainedProperties() {
         Property *p = it->first;
         bool comesFromCommand = false;
         if (p->isSettable()) {
+            // Check if we have a command value for this property, so we can use it instead of the restored data value!
             if (commandValues.count(p) > 0) {
                 elm = commandValues[p];
                 commandValues.erase(p);
