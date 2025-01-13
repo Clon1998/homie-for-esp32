@@ -177,11 +177,11 @@ void Property::init() {
     log_v("Init for property %s (%s) with base topic: '%s'", _name, _id, _topic);
 
     if (_retained)
-        _client.subscribe(_topic, 2);
+        _client.subscribe(_topic, 1);
 
     if (_settable) {
         _parent.getParent().registerSettableProperty(*this);
-        _client.subscribe(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 2);
+        _client.subscribe(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1);
     }
 }
 
@@ -218,9 +218,9 @@ void Property::setValue(const char *value, bool updateToMqtt) {
     if (!_retained)
         return;
     if (updateToMqtt)
-        _client.publish(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 2, true, _value);
+        _client.publish(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1, true, _value);
     else
-        _client.publish(_topic, 2, true, _value);
+        _client.publish(_topic, 1, true, _value);
 }
 
 void Property::setValue(String value, bool updateToMqtt) {

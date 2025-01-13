@@ -84,6 +84,22 @@ Device::Device(AsyncMqttClient &client, const char *id, uint8_t buffSize) : _cli
         (void *)args,
         this->timerCode);
 
+    _wifiReconnectTimer = xTimerCreate(
+        "wifiRTimer",
+        pdMS_TO_TICKS(10000),
+        pdFALSE,
+        (void *)args,
+        [](TimerHandle_t timer) {
+            TimerArguments *args = (TimerArguments *)pvTimerGetTimerID(timer);
+            if (WiFi.status() != WL_CONNECTED) {
+                log_i("Attempting WiFi reconnection...");
+                WiFi.reconnect();
+            } else {
+                log_i("Stopping Timer since WiFi is Connected");
+                xTimerStop(timer, 0);
+            }
+        });
+
     //TODO: Add the taskWorkOnQueue to the WatchDog!
 
     xTaskCreateUniversal(
@@ -571,6 +587,7 @@ void Device::onWiFiEventCallback(WiFiEvent_t event) {
         case SYSTEM_EVENT_STA_GOT_IP: {
             log_i("Received IP Adress: %s", WiFi.localIP().toString().c_str());
             log_i("Wifi Ready!");
+            _wifiReconnectAttempts = 0;
             _ip = WiFi.localIP();
             _client.connect();
             break;
@@ -580,8 +597,12 @@ void Device::onWiFiEventCallback(WiFiEvent_t event) {
             xTimerStop(_mqttReconnectTimer, 0);
             // Add WiFi reconnection attempt
             if (WiFi.status() != WL_CONNECTED) {
-                log_i("Attempting WiFi reconnection...");
-                WiFi.reconnect();
+                uint32_t delay = min(
+                    (uint32_t)(2000 * pow(2, _wifiReconnectAttempts++)), 
+                    (uint32_t)MAX_RECONNECT_DELAY
+                );
+                log_i("Wifi-Reconnect attempt %d in %d ms", _mqttReconnectAttempts, delay);
+                xTimerChangePeriod(_wifiReconnectTimer, pdMS_TO_TICKS(delay), 0);
             }
             break;
         default:

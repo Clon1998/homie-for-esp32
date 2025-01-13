@@ -83,8 +83,11 @@ class Device {
     TaskHandle_t _taskStatsHandling;
     TaskHandle_t _taskNewMqttMessages;
 
+    TimerHandle_t _wifiReconnectTimer;
+
     TimerHandle_t _mqttReconnectTimer;
 
+    unsigned long _wifiReconnectAttempts = 0;
     unsigned long _mqttReconnectAttempts = 0;
     const unsigned long MAX_RECONNECT_DELAY = 300000; // 5 minutes
 
