@@ -11,6 +11,8 @@
 #include <map>
 #include <vector>
 
+#define TAG "Home_Device"
+
 #define HOMIE_VER "3.0.1"
 #ifndef HOMIE_INCOMING_MSG_QUEUE
 #define HOMIE_INCOMING_MSG_QUEUE 50
