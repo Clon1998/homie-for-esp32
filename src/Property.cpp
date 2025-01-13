@@ -177,11 +177,11 @@ void Property::init() {
     log_v("Init for property %s (%s) with base topic: '%s'", _name, _id, _topic);
 
     if (_retained)
-        _client.subscribe(_topic, 1);
+        _client.subscribe(_topic, 2);
 
     if (_settable) {
         _parent.getParent().registerSettableProperty(*this);
-        _client.subscribe(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 1);
+        _client.subscribe(prefixedPropertyTopic(_parent.getParent().getWorkingBuffer(), "/set"), 2);
     }
 }
 

@@ -387,15 +387,19 @@ void Device::restoreRetainedProperties() {
                 vTaskDelay(pdMS_TO_TICKS(40));
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(500));
+
         log_i("---------------------------------------");
         log_i("Defaults handling... DONE");
         log_i("---------------------------------------");
         _setupDone = true;
+        setState(DSTATE_READY);
         for (auto callback : _onDeviceSetupDoneCallbacks)
             callback(*this);
+    } else {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        setState(DSTATE_READY);
     }
-    vTaskDelay(pdMS_TO_TICKS(500));
-    setState(DSTATE_READY);
     _client.publish(prefixedTopic(_workingBuffer, "$state"), 1, true, stateEnumToString(_state));
     log_i("---------------------------------------");
     log_i("Restoring retained properties... DONE took %d ms", (millis() - stamp));
@@ -405,6 +409,7 @@ void Device::restoreRetainedProperties() {
 void Device::onMqttConnectCallback(bool sessionPresent) {
     log_i("MQTT Connected - Starting Device Init/Setup");
     _connectionTimeStamp = millis();
+    _mqttReconnectAttempts = 0;
     xTaskCreateUniversal(
         this->startInitOrSetupTaskCode,
         "homie_init_setup",
@@ -420,9 +425,15 @@ void Device::onMqttDisconnectCallback(AsyncMqttClientDisconnectReason reason) {
     setState(DSTATE_LOST);
     vTaskSuspend(_taskStatsHandling);
     vTaskSuspend(_taskNewMqttMessages);
-
+    _mqttReconnectAttempts++;
     if (WiFi.isConnected()) {
         log_i("Starting Timer");
+        uint32_t delay = min(
+            (uint32_t)(10000 * pow(2, _mqttReconnectAttempts)), 
+            (uint32_t)MAX_RECONNECT_DELAY
+        );
+        log_i("Reconnect attempt %d in %d ms", _mqttReconnectAttempts, delay);
+        xTimerChangePeriod(_mqttReconnectTimer, pdMS_TO_TICKS(delay), 0);
         xTimerStart(_mqttReconnectTimer, 0);
     }
 }
@@ -544,13 +555,12 @@ void Device::timerCode(TimerHandle_t timer) {
         log_i("Connecting to MQTT...");
         args->device->_client.connect();
     } else {
-        log_i("Stopping Timer since WiFi isnt Connected");
+        log_i("Stopping Timer since WiFi isn't Connected");
         xTimerStop(timer, 0);
     }
 }
 //
 void Device::onWiFiEventCallback(WiFiEvent_t event) {
-    // log_v("[WiFi-event] event: %d\n", event);
     switch (event) {
         case SYSTEM_EVENT_STA_CONNECTED:
             log_i("Station Connected");
@@ -561,12 +571,16 @@ void Device::onWiFiEventCallback(WiFiEvent_t event) {
             log_i("Wifi Ready!");
             _ip = WiFi.localIP();
             _client.connect();
-            // xTimerStart(_mqttReconnectTimer, 0);
             break;
         }
         case SYSTEM_EVENT_STA_DISCONNECTED:
             log_e("WiFi lost connection");
             xTimerStop(_mqttReconnectTimer, 0);
+            // Add WiFi reconnection attempt
+            if (WiFi.status() != WL_CONNECTED) {
+                log_i("Attempting WiFi reconnection...");
+                WiFi.reconnect();
+            }
             break;
         default:
             log_i("[WiFi-event] %d", event);

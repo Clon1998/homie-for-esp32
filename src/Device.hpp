@@ -85,6 +85,9 @@ class Device {
 
     TimerHandle_t _mqttReconnectTimer;
 
+    unsigned long _mqttReconnectAttempts = 0;
+    const unsigned long MAX_RECONNECT_DELAY = 300000; // 5 minutes
+
     void restoreRetainedProperties();
 
     static void startInitOrSetupTaskCode(void *parameter);
