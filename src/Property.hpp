@@ -1,5 +1,7 @@
 #pragma once
 
+#define TAG "Home_Property"
+
 #include <string.h>
 // #include <MQTT.h>
 #include <AsyncMqttClient.h>

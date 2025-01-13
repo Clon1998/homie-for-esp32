@@ -1,5 +1,7 @@
 #pragma once
 
+#define TAG "Home_Stats"
+
 #include <AsyncMqttClient.h>
 
 #include <HomieDatatype.hpp>
