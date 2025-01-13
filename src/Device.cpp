@@ -426,16 +426,17 @@ void Device::onMqttDisconnectCallback(AsyncMqttClientDisconnectReason reason) {
     setState(DSTATE_LOST);
     vTaskSuspend(_taskStatsHandling);
     vTaskSuspend(_taskNewMqttMessages);
-    _mqttReconnectAttempts++;
     if (WiFi.isConnected()) {
         log_i("Starting Timer");
         uint32_t delay = min(
-            (uint32_t)(10000 * pow(2, _mqttReconnectAttempts)), 
+            (uint32_t)(2000 * pow(2, _mqttReconnectAttempts)), 
             (uint32_t)MAX_RECONNECT_DELAY
         );
         log_i("Reconnect attempt %d in %d ms", _mqttReconnectAttempts, delay);
         xTimerChangePeriod(_mqttReconnectTimer, pdMS_TO_TICKS(delay), 0);
         xTimerStart(_mqttReconnectTimer, 0);
+        _mqttReconnectAttempts++;
+
     }
 }
 
