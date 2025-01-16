@@ -12,6 +12,8 @@ void MqttLogger::init(AsyncMqttClient* client, const char* deviceId) {
 void MqttLogger::log(const char* tag, const char* format, ...) {
     if (!_client || !_deviceId) return;
 
+    ESP_LOG_I(tag, "Logging to MQTT");
+
     char buffer[256];
     va_list args;
     va_start(args, format);
@@ -25,5 +27,7 @@ void MqttLogger::log(const char* tag, const char* format, ...) {
     char topic[64];
     snprintf(topic, sizeof(topic), "debug/%s", _deviceId);
     
+    ESP_LOG_I(TAG, "Publishing to topic: %s", topic);
+
     _client->publish(topic, 0, false, buffer);
 } 
