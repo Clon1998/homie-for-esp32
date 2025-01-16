@@ -550,6 +550,9 @@ void Device::handleIncomingMqttTaskCode(void *parameter) {
             log_i("MQTT: topic: '%s' payload '%s'", tPtr, elm->payload);
             if (it != crntDevice->_topicCallbacks.end()) {
                 Property *p = it->second;
+                
+                // Add check to prevent processing our own published values
+                if (strcmp(p->getValue(), elm->payload) != 0) {
                 log_v("Found a matching callback for topic '%s' property: %s(%s)", tPtr,
                       p->getName(), p->getId());
 
@@ -560,6 +563,7 @@ void Device::handleIncomingMqttTaskCode(void *parameter) {
                     String v = callback(*p, elm->payload);
                     p->setValue(v);
                 }
+            }
             }
             delete elm;
         }
