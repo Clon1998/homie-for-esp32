@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MqttLogger.hpp"
+
 #define TAG "Home_Property"
 
 #include <string.h>

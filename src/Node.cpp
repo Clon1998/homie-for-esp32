@@ -1,3 +1,4 @@
+#include "MqttLogger.hpp"
 #include <Device.hpp>
 #include <Node.hpp>
 

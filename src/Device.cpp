@@ -1,6 +1,7 @@
 #include <WiFi.h>
 
 #include <Device.hpp>
+#include "MqttLogger.hpp"
 
 const char *stateEnumToString(HomieDeviceState e) {
     switch (e) {
@@ -213,6 +214,8 @@ void Device::init() {
 
     log_v("Device-Init Base-Topic '%s'", _topic);
     setState(DSTATE_INIT);
+
+    MqttLogger::init(&_client, _id);
 
     _client.publish(prefixedTopic(_workingBuffer, "$localip"), 1, true, _ip.toString().c_str());
     for (auto const &node : _nodes) {
