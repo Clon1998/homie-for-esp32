@@ -9,13 +9,17 @@ void MqttLogger::init(AsyncMqttClient* client, const char* deviceId) {
     _deviceId = deviceId;
 }
 
-void MqttLogger::log(const char* format, ...) {
+void MqttLogger::log(const char* tag, const char* format, ...) {
     if (!_client || !_deviceId) return;
 
     char buffer[256];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    
+    // Add tag to the message
+    int prefixLen = snprintf(buffer, sizeof(buffer), "[%s] ", tag);
+    vsnprintf(buffer + prefixLen, sizeof(buffer) - prefixLen, format, args);
+    
     va_end(args);
 
     char topic[64];
